@@ -1,6 +1,8 @@
 package pt.up.fe.sdis.proj1.messages;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -49,39 +51,27 @@ public class Message  {
 	private byte[] body = null;
 	
 	
-	public byte[] toByteArray() {
-		ByteBuffer bb = ByteBuffer.allocate(90);
-		bb.put(type.toString().getBytes());
+	public byte[] toByteArray() throws UnsupportedEncodingException {
+	    StringBuilder sb = new StringBuilder();
+	    
+	    sb.append(type.toString());
+	    
+	    if (version != null)
+	        sb.append(' ' + Byte.toString(version[0]) + '.' + Byte.toString(version[1]));
+	    
+	    if (fileID != null) {
+	        sb.append(' ');
+	        for (int i = fileID.length - 1; i >= 0; --i) sb.append(String.format("%02X", fileID[i]));
+	    }
+	    
+	    if (chunkNo != null)
+	        sb.append(' ' + chunkNo.toString());
+	    
+	    if (replicationDeg != null) sb.append(' ' + replicationDeg.toString());
+	    
+		sb.append("\r\n\r\n");
 		
-		if (version != null) {
-			bb.put(SPACE);
-			bb.put((Byte.toString(version[0]) + '.' + Byte.toString(version[1])).getBytes());
-		}
-		
-		if (fileID != null) {
-			bb.put(SPACE);
-			for (int i = fileID.length - 1; i >= 0; --i) {
-				bb.put(String.format("%02x", fileID[i]).getBytes());
-			}
-		}
-		
-		if (chunkNo != null) {
-			bb.put(SPACE);
-			String chunkNoStr = chunkNo.toString();
-			if (chunkNoStr.length() <= 6) bb.put(chunkNoStr.getBytes());
-		}
-
-		if (replicationDeg != null) {
-			bb.put(SPACE);
-			bb.put(replicationDeg.toString().getBytes());
-		}
-		
-		bb.put(CRLF);
-		bb.put(CRLF);
-		
-		byte[] result = new byte[bb.position()];
-		bb.position(0);
-		bb.get(result);
+		byte[] result = sb.toString().getBytes("US-ASCII");
 		
 		if (body != null) {
 			int prevLength = result.length;
@@ -103,8 +93,8 @@ public class Message  {
 		return msg;
 	}
 	
-	public static void main(String[] args) {
-		Message msg = new Message(Type.REMOVED);
+	public static void main(String[] args) throws UnsupportedEncodingException {
+		Message msg = new Message(Type.CHUNK);
 		byte[] b = msg.toByteArray();
 		
 		Message msg1 = Message.fromByteArray(b);
