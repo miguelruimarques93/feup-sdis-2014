@@ -28,6 +28,8 @@ public class Message  {
 	
 	public void setFileID(byte[] f) { fileID = f; }
 	
+	public byte[] getFileID() { return fileID; }
+	
 	private byte[] version = null;
 	
 	
@@ -110,7 +112,7 @@ public class Message  {
 		Collections.reverse(chars);
 		
 		for (int i = 0; i < msg.fileID.length; ++i)
-		    msg.fileID[i] = Byte.parseByte(chars.get(i), 16);
+		    msg.fileID[i] = (byte)Short.parseShort(chars.get(i), 16);
 		
 		if (msg.type != Type.DELETE) {
 		    paramNum++;
