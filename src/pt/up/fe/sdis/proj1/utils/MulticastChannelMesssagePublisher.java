@@ -36,7 +36,8 @@ public class MulticastChannelMesssagePublisher extends Thread {
             buffer = new byte[_packetSize];
             try {
                 _mCastSocket.receive(dp);
-                _subject.onNext(dp.getData());
+                // System.out.println("Something received from " + dp.getAddress());
+                _subject.onNext(dp.getData().clone());
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -54,8 +55,9 @@ public class MulticastChannelMesssagePublisher extends Thread {
                 public Message call(byte[] arg0) {
                     try {
                         Message result = Message.fromByteArray(arg0);
+                        // System.out.println("Message received");
                         return result;
-                    } catch (IOException e) {
+                    } catch (Exception e) {
                         // e.printStackTrace();
                         return null;
                     }
@@ -65,15 +67,16 @@ public class MulticastChannelMesssagePublisher extends Thread {
                 public Boolean call(Message arg0) {
                     return arg0 != null;
                 }
-            });
+            }).observeOn(Schedulers.computation());
 
     private MulticastSocket _mCastSocket;
     private int _packetSize = MAX_UDP_SIZE;
 
     public static void main(String[] args) {
-        String addr = "230.0.0.1";
+        String addr = "239.255.0.1";
         int port = 11099;
 
+        
         try {
             MulticastChannelMesssagePublisher mcmp = new MulticastChannelMesssagePublisher(
                     addr, port);
@@ -102,10 +105,38 @@ public class MulticastChannelMesssagePublisher extends Thread {
 
                 @Override
                 public void onNext(Message arg0) {
+                    long j = i++;
+                    System.out.println(Thread.currentThread().getId() + " : "
+                            + j + " : " + arg0.type);
+                }
+            });
+            
+            /*mcmp.getObservable().filter(new Func1<Message, Boolean>() {
+
+                @Override
+                public Boolean call(Message arg0) {
+                    return arg0.type == Message.Type.PUTCHUNK;
+                }
+            }).subscribe(new Observer<Message>() {
+
+                long i = 0L;
+
+                @Override
+                public void onCompleted() {
+                    System.out.println("Done");
+                }
+
+                @Override
+                public void onError(Throwable arg0) {
+                    arg0.printStackTrace();
+                }
+
+                @Override
+                public void onNext(Message arg0) {
                     System.out.println(Thread.currentThread().getId() + " : "
                             + i++ + " : " + arg0.type);
                 }
-            });
+            });*/
         } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
