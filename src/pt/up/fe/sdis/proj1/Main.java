@@ -1,16 +1,10 @@
 package pt.up.fe.sdis.proj1;
 
-import java.io.UnsupportedEncodingException;
-import java.util.Arrays;
-import java.util.concurrent.TimeUnit;
-
 import pt.up.fe.sdis.proj1.messages.Message;
 import rx.Observable;
 import rx.Observer;
-import rx.Scheduler;
-import rx.schedulers.Schedulers;
 import rx.Subscription;
-import rx.functions.Action1;
+import rx.schedulers.Schedulers;
 import rx.subjects.PublishSubject;
 
 public class Main {

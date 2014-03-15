@@ -34,17 +34,15 @@ public class Main {
         
         
         byte[] arr = msg.toByteArray();
-        DatagramPacket dp = new DatagramPacket(arr, arr.length, InetAddress.getByName("230.0.0.1"), 11099);
+        DatagramPacket dp = new DatagramPacket(arr, arr.length, InetAddress.getByName("239.255.0.1"), 11099);
         byte[] arr1 = msg1.toByteArray();
-        DatagramPacket dp1 = new DatagramPacket(arr1, arr1.length, InetAddress.getByName("230.0.0.1"), 11099);
+        DatagramPacket dp1 = new DatagramPacket(arr1, arr1.length, InetAddress.getByName("239.255.0.1"), 11099);
         
         long i = 0;
         
         for (i = 0; i < 100; ++i) {
             mCastSocket.send(dp);
-            // Thread.sleep(5);
             mCastSocket.send(dp1);
-            //Thread.sleep(10);
         }
         System.out.println(i * 2L);
         mCastSocket.close();
