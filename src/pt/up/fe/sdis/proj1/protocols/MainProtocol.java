@@ -7,6 +7,7 @@ public class MainProtocol extends AbstractProtocol {
 
     public MainProtocol(MulticastChannelMesssagePublisher mcmp) {
         super(mcmp);
+        this.start();
     }
 
     @Override

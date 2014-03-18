@@ -9,11 +9,19 @@ import rx.functions.Func1;
 public abstract class AbstractProtocol implements Observer<Message> {
 
     public AbstractProtocol(MulticastChannelMesssagePublisher mcmp) {
-        _subscription = mcmp.getObservable().subscribe(this);
+        _mcmp = mcmp;
+    }
+
+    protected final void start() {
+        _subscription = _mcmp.getObservable().subscribe(this);
     }
     
-    public AbstractProtocol(MulticastChannelMesssagePublisher mcmp, Func1<Message, Boolean> filter) {
-        _subscription = mcmp.getObservable().filter(filter).subscribe(this);
+    protected final void start(Func1<Message, Boolean> filter) {
+        _subscription = _mcmp.getObservable().filter(filter).subscribe(this);
+    }
+    
+    protected final void finish() {
+        _subscription.unsubscribe();
     }
     
     @Override
@@ -25,8 +33,9 @@ public abstract class AbstractProtocol implements Observer<Message> {
     @Override
     public void onNext(Message arg0) { ProcessMessage(arg0); }
     
-    public abstract void ProcessMessage(Message msg);
+    protected abstract void ProcessMessage(Message msg);
     
-    protected Subscription _subscription;
+    private Subscription _subscription;
+    private MulticastChannelMesssagePublisher _mcmp;
 
 }

@@ -7,7 +7,6 @@ import java.net.MulticastSocket;
 
 import pt.up.fe.sdis.proj1.messages.Message;
 import rx.Observable;
-import rx.Observer;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 import rx.subjects.PublishSubject;
@@ -36,8 +35,7 @@ public class MulticastChannelMesssagePublisher extends Thread {
             buffer = new byte[_packetSize];
             try {
                 _mCastSocket.receive(dp);
-                // System.out.println("Something received from " + dp.getAddress());
-                _subject.onNext(dp.getData().clone());
+                _subject.onNext(Pair.make_pair(dp.getData().clone(), dp.getAddress()));
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -48,17 +46,16 @@ public class MulticastChannelMesssagePublisher extends Thread {
         return _observable;
     }
 
-    private PublishSubject<byte[]> _subject = PublishSubject.create();
+    private PublishSubject<Pair<byte[], InetAddress>> _subject = PublishSubject.create();
     private Observable<Message> _observable = _subject
-            .observeOn(Schedulers.io()).map(new Func1<byte[], Message>() {
+            .observeOn(Schedulers.io()).map(new Func1<Pair<byte[], InetAddress>, Message>() {
                 @Override
-                public Message call(byte[] arg0) {
+                public Message call(Pair<byte[], InetAddress> arg0) {
                     try {
-                        Message result = Message.fromByteArray(arg0);
-                        // System.out.println("Message received");
+                        Message result = Message.fromByteArray(arg0.first);
+                        result.Sender = arg0.second;
                         return result;
                     } catch (Exception e) {
-                        // e.printStackTrace();
                         return null;
                     }
                 }
@@ -71,76 +68,4 @@ public class MulticastChannelMesssagePublisher extends Thread {
 
     private MulticastSocket _mCastSocket;
     private int _packetSize = MAX_UDP_SIZE;
-
-    public static void main(String[] args) {
-        String addr = "239.255.0.1";
-        int port = 11099;
-
-        
-        try {
-            MulticastChannelMesssagePublisher mcmp = new MulticastChannelMesssagePublisher(
-                    addr, port);
-
-            mcmp.start();
-
-            mcmp.getObservable()/*.filter(new Func1<Message, Boolean>() {
-
-                @Override
-                public Boolean call(Message arg0) {
-                    return arg0.type == Message.Type.CHUNK;
-                }
-            })*/.subscribe(new Observer<Message>() {
-
-                long i = 0L;
-
-                @Override
-                public void onCompleted() {
-                    System.out.println("Done");
-                }
-
-                @Override
-                public void onError(Throwable arg0) {
-                    arg0.printStackTrace();
-                }
-
-                @Override
-                public void onNext(Message arg0) {
-                    long j = i++;
-                    System.out.println(Thread.currentThread().getId() + " : "
-                            + j + " : " + arg0.type);
-                }
-            });
-            
-            /*mcmp.getObservable().filter(new Func1<Message, Boolean>() {
-
-                @Override
-                public Boolean call(Message arg0) {
-                    return arg0.type == Message.Type.PUTCHUNK;
-                }
-            }).subscribe(new Observer<Message>() {
-
-                long i = 0L;
-
-                @Override
-                public void onCompleted() {
-                    System.out.println("Done");
-                }
-
-                @Override
-                public void onError(Throwable arg0) {
-                    arg0.printStackTrace();
-                }
-
-                @Override
-                public void onNext(Message arg0) {
-                    System.out.println(Thread.currentThread().getId() + " : "
-                            + i++ + " : " + arg0.type);
-                }
-            });*/
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-    }
-
 }
