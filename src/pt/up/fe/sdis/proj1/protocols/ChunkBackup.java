@@ -23,7 +23,7 @@ public class ChunkBackup extends AbstractProtocol {
             @Override
             public void call(Inner arg0) {
 
-                final Message msg = Message.putChunkFromChunk(chunk);
+                final Message msg = Message.makePutChunk(chunk);
                 
                 start(new Func1<Message, Boolean>() {
                     @Override
@@ -49,6 +49,7 @@ public class ChunkBackup extends AbstractProtocol {
                             
                             if (numRepliers < chunk.replicationDeg) {
                                 if (NumTimes == 5) {
+                                	//TODO replace with some kind of warning
                                     finish();
                                 } else {
                                     _repliers.clear();

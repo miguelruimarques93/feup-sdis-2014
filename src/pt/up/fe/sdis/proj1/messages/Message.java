@@ -108,7 +108,7 @@ public class Message {
         return result;
     }
 
-    public static Message putChunkFromChunk(Chunk chunk) {
+    public static Message makePutChunk(Chunk chunk) {
         Message result = new Message(Type.PUTCHUNK);
 
         result.setVersion(1, 0);
@@ -120,7 +120,7 @@ public class Message {
         return result;
     }
 
-    public static Message chunkFromChunk(Chunk chunk) {
+    public static Message makeChunk(Chunk chunk) {
         Message result = new Message(Type.CHUNK);
 
         result.setVersion(1, 0);
@@ -131,7 +131,7 @@ public class Message {
         return result;
     }
 
-    public static Message getChunk(byte[] fileID, int chunkNo) {
+    public static Message makeGetChunk(byte[] fileID, int chunkNo) {
         Message result = new Message(Type.GETCHUNK);
         
         result.setVersion(1, 0);
@@ -141,7 +141,7 @@ public class Message {
         return result;
     }
     
-    public static Message delete(byte[] fileID) {
+    public static Message makeDelete(byte[] fileID) {
         Message result = new Message(Type.DELETE);
         result.setFileID(fileID);
         return result;

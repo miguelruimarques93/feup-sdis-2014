@@ -12,7 +12,7 @@ public class ChunkRestore extends AbstractProtocol {
             final int chunkNo) {
         super(comm.MDR.Publisher);
 
-        Message msg = Message.getChunk(fileID, chunkNo);
+        Message msg = Message.makeGetChunk(fileID, chunkNo);
 
         comm.MC.Sender.Send(msg);
 

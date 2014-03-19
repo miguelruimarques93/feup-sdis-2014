@@ -42,8 +42,8 @@ public class Main {
                 fileId, 
                 body);
         
-        Message msg = Message.putChunkFromChunk(c);
-        Message msg1 = Message.chunkFromChunk(c);
+        Message msg = Message.makePutChunk(c);
+        Message msg1 = Message.makeChunk(c);
         
         long i = 0;
         
