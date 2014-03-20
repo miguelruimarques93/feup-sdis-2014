@@ -1,4 +1,4 @@
-package pt.up.fe.sdis.proj1.protocols;
+package pt.up.fe.sdis.proj1.protocols.initiator;
 
 import java.net.InetAddress;
 import java.util.HashSet;
@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit;
 
 import pt.up.fe.sdis.proj1.Chunk;
 import pt.up.fe.sdis.proj1.messages.Message;
+import pt.up.fe.sdis.proj1.protocols.AbstractProtocol;
 import pt.up.fe.sdis.proj1.utils.Communicator;
 import rx.Scheduler;
 import rx.Scheduler.Inner;
