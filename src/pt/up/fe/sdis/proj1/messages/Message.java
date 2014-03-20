@@ -131,7 +131,15 @@ public class Message {
         return result;
     }
 
-    public static Message makeGetChunk(byte[] fileID, int chunkNo) {
+    public static Message makeRemoved(byte[] fileId, int chunkNo) {
+        Message result = new Message(Type.REMOVED);
+        result.setVersion(1, 0);
+        result.setFileID(fileId);
+        result.setChunkNo(chunkNo);
+        return result;
+    }
+    
+public static Message makeGetChunk(byte[] fileID, int chunkNo) {
         Message result = new Message(Type.GETCHUNK);
         
         result.setVersion(1, 0);
