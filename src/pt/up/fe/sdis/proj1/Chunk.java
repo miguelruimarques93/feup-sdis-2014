@@ -3,7 +3,7 @@ package pt.up.fe.sdis.proj1;
 public class Chunk {
 
     public Chunk(int cn, int rd, byte[] fid, byte[] d) {
-        if (cn < 1 || cn > 999999) throw new IllegalArgumentException();
+        if (cn < 0 || cn > 999999) throw new IllegalArgumentException();
         chunkNo = cn;
         if (rd < 1 || rd > 9) throw new IllegalArgumentException();
         replicationDeg = rd;     

@@ -1,6 +1,7 @@
 package pt.up.fe.sdis.proj1.utils;
 
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -12,8 +13,8 @@ import java.security.NoSuchAlgorithmException;
 public class File {
     public File(String myAddr, String path) throws IOException,
             NoSuchAlgorithmException {
-        java.io.File file = new java.io.File(path);
-        _absolutePath = file.getAbsolutePath();
+        _file = new java.io.File(path);
+        _absolutePath = _file.getAbsolutePath();
         
         Path filePath = FileSystems.getDefault()
                 .getPath(_absolutePath);
@@ -39,11 +40,35 @@ public class File {
         return _fileSize;
     }
 
+    public byte[] getChunk(int chunkNo) throws IOException {
+        long chunkPos = chunkNo * 64000;
+        long arrSize = Math.min(64000, _fileSize - chunkPos);
+        if (chunkPos > _fileSize) {
+            if (raf != null) {
+                raf.close();
+                raf = null;
+            }
+            return new byte[0];
+        }
+        
+        if (raf == null) 
+            raf = new RandomAccessFile(_file, "r");
+        
+        raf.seek(chunkPos);
+        byte[] result = new byte[(int) arrSize];
+        raf.read(result);
+        
+        return result;
+    }
+    
     byte[] _fileId;
 
     private String _absolutePath;
+    private java.io.File _file;
     private String _lastModifiedTime;
     private String _ownerIP;
     
     private long _fileSize;
+    
+    private RandomAccessFile raf = null;
 }

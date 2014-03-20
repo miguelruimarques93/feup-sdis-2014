@@ -122,6 +122,16 @@ public class Message {
         return result;
     }
 
+    public static Message makeStored(byte[] fileId, int chunkNo) {
+        Message result = new Message(Type.STORED);
+        
+        result.setVersion(1, 0);
+        result.setFileID(fileId);
+        result.setChunkNo(chunkNo);
+        
+        return result;
+    }
+    
     public static Message makeChunk(Chunk chunk) {
         Message result = new Message(Type.CHUNK);
 
