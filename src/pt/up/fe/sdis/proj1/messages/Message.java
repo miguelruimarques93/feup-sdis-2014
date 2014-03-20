@@ -55,7 +55,7 @@ public class Message {
     protected void setChunkNo(int c) {
         chunkNo = c;
     }
-    
+
     public Integer getChunkNo() {
         return chunkNo;
     }
@@ -68,8 +68,10 @@ public class Message {
         body = b;
     }
 
-    public byte[] getBody() { return body; }
-    
+    public byte[] getBody() {
+        return body;
+    }
+
     public InetAddress Sender = null;
 
     public byte[] toByteArray() {
@@ -138,23 +140,23 @@ public class Message {
         result.setChunkNo(chunkNo);
         return result;
     }
-    
-public static Message makeGetChunk(byte[] fileID, int chunkNo) {
+
+    public static Message makeGetChunk(byte[] fileID, int chunkNo) {
         Message result = new Message(Type.GETCHUNK);
-        
+
         result.setVersion(1, 0);
         result.setFileID(fileID);
         result.setChunkNo(chunkNo);
-        
+
         return result;
     }
-    
+
     public static Message makeDelete(byte[] fileID) {
         Message result = new Message(Type.DELETE);
         result.setFileID(fileID);
         return result;
     }
-    
+
     public static Message fromByteArray(byte[] bArray) throws IOException {
         ByteArrayInputStream byteArrayStream = new ByteArrayInputStream(bArray);
         DataInputStream dis = new DataInputStream(byteArrayStream);
