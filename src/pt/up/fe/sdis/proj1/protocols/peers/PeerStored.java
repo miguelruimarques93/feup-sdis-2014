@@ -50,8 +50,9 @@ public class PeerStored extends AbstractProtocol {
             }
 
             synchronized (chunksPeers) {
-                if (!chunksPeers.contains(msg.Sender.toString())) {
-                    chunksPeers.add(msg.Sender.toString());
+                String uniqueId = msg.Sender.getHostAddress();
+                if (!chunksPeers.contains(uniqueId)) {
+                    chunksPeers.add(uniqueId);
                     PrintWriter pw = new PrintWriter(new FileOutputStream(file, true));
                     pw.println(msg.Sender);
                     pw.close();

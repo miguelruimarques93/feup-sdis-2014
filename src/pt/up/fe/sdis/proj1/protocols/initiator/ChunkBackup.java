@@ -68,7 +68,6 @@ public class ChunkBackup extends AbstractProtocol {
     @Override
     protected void ProcessMessage(Message msg) {
         synchronized (_repliers) {
-            System.err.println("STORED Received.");
             _repliers.add(msg.Sender);
         }
     }
