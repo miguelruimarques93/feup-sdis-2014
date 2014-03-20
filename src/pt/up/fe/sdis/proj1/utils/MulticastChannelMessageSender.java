@@ -16,6 +16,15 @@ public class MulticastChannelMessageSender {
         _mCastSocket.setTimeToLive(1);
     }
     
+    public MulticastChannelMessageSender(String mCastAddr, int mCastPort, String myAddr)
+            throws IOException {
+        _address = InetAddress.getByName(mCastAddr);
+        _port = mCastPort;
+        _mCastSocket = new MulticastSocket();
+        _mCastSocket.setTimeToLive(1);
+        _mCastSocket.setInterface(InetAddress.getByName(myAddr));
+    }
+    
     public boolean Send(Message msg) {
         byte[] arr = msg.toByteArray();
         DatagramPacket dp = new DatagramPacket(arr, arr.length, _address, _port);

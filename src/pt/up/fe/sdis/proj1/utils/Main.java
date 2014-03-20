@@ -10,7 +10,7 @@ import rx.Observer;
 public class Main {
 
     public static void main(String[] args) throws IOException {
-        Channel channel = new Channel("239.255.0.1", 11099);
+        Channel channel = new Channel("239.255.0.1", 11099, "192.168.0.197");
         
         channel.Publisher.getObservable().subscribe(new Observer<Message>() {
             long i = 1L;

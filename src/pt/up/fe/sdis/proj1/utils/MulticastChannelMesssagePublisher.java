@@ -26,6 +26,21 @@ public class MulticastChannelMesssagePublisher extends Thread {
         _mCastSocket = new MulticastSocket(mCastPort);
         _mCastSocket.joinGroup(InetAddress.getByName(mCastAddr));
     }
+    
+    public MulticastChannelMesssagePublisher(String mCastAddr, int mCastPort, String myAddr)
+            throws IOException {
+        _mCastSocket = new MulticastSocket(mCastPort);
+        _mCastSocket.joinGroup(InetAddress.getByName(mCastAddr));
+        _mCastSocket.setInterface(InetAddress.getByName(myAddr));
+    }
+
+    public MulticastChannelMesssagePublisher(String mCastAddr, int mCastPort, String myAddr,
+            int packetSize) throws IOException {
+        _packetSize = packetSize;
+        _mCastSocket = new MulticastSocket(mCastPort);
+        _mCastSocket.joinGroup(InetAddress.getByName(mCastAddr));
+        _mCastSocket.setInterface(InetAddress.getByName(myAddr));
+    }
 
     @Override
     public void run() {
