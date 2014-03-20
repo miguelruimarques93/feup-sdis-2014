@@ -15,6 +15,8 @@ public class Main {
                 11099), Pair.make_pair("239.255.0.1", 11091), Pair.make_pair(
                 "239.255.0.1", 11092), "192.168.0.197");
 
+        
+        
         if (true) {
             File file = new File("192.168.0.197", "01Contents_Data_Nets.pdf");
 
@@ -24,7 +26,7 @@ public class Main {
             byte[] body = null;
             do {
                 body = file.getChunk(cn);
-                Chunk c = new Chunk(cn, 3, fileId, body);
+                Chunk c = new Chunk(cn, 1, fileId, body);
 
                 new ChunkBackup(comm, c);
 
