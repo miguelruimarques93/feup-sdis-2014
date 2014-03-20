@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
+import java.util.Arrays;
 
 import pt.up.fe.sdis.proj1.messages.Message;
 import rx.Observable;
@@ -50,7 +51,7 @@ public class MulticastChannelMesssagePublisher extends Thread {
             buffer = new byte[_packetSize];
             try {
                 _mCastSocket.receive(dp);
-                _subject.onNext(Pair.make_pair(dp.getData().clone(), dp.getAddress()));
+                _subject.onNext(Pair.make_pair(Arrays.copyOf(dp.getData(), dp.getLength()), dp.getAddress()));
             } catch (Exception e) {
                 e.printStackTrace();
             }

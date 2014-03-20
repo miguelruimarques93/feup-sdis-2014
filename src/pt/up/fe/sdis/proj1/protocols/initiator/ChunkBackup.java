@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit;
 import pt.up.fe.sdis.proj1.Chunk;
 import pt.up.fe.sdis.proj1.messages.Message;
 import pt.up.fe.sdis.proj1.protocols.AbstractProtocol;
-import pt.up.fe.sdis.proj1.utils.Communicator;
+import pt.up.fe.sdis.proj1.utils.BackupSystem;
 import rx.Scheduler;
 import rx.Scheduler.Inner;
 import rx.functions.Action1;
@@ -19,8 +19,8 @@ import rx.schedulers.Schedulers;
 public class ChunkBackup extends AbstractProtocol {
     private Chunk _chunk;
     
-    public ChunkBackup(final Communicator comm, final Chunk chunk) {
-        super(comm.MC.Publisher);
+    public ChunkBackup(final BackupSystem bs, final Chunk chunk) {
+        super(bs.Comm.MC.Publisher);
         _chunk = chunk;
         final Message msg = Message.makePutChunk(chunk);
 
@@ -28,11 +28,10 @@ public class ChunkBackup extends AbstractProtocol {
             @Override
             public Boolean call(Message arg0) {
                 return arg0.type == Message.Type.STORED && Arrays.equals(msg.getFileID(), _chunk.fileID) && msg.getChunkNo().equals(_chunk.chunkNo);
-                        
             }
         });
 
-        comm.MDB.Sender.Send(msg);
+        bs.Comm.MDB.Sender.Send(msg);
 
         Action1<Scheduler.Inner> act = new Action1<Scheduler.Inner>() {
             int TimeInterval = 500;
@@ -52,7 +51,7 @@ public class ChunkBackup extends AbstractProtocol {
                         } else {
                             _repliers.clear();
                             TimeInterval *= 2;
-                            comm.MDB.Sender.Send(msg);
+                            bs.Comm.MDB.Sender.Send(msg);
                             arg0.schedule(this, TimeInterval,
                                     TimeUnit.MILLISECONDS);
                         }
@@ -69,6 +68,7 @@ public class ChunkBackup extends AbstractProtocol {
     @Override
     protected void ProcessMessage(Message msg) {
         synchronized (_repliers) {
+            System.err.println("STORED Received.");
             _repliers.add(msg.Sender);
         }
     }

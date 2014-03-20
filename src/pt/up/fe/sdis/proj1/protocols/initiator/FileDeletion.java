@@ -2,13 +2,13 @@ package pt.up.fe.sdis.proj1.protocols.initiator;
 
 import pt.up.fe.sdis.proj1.messages.Message;
 import pt.up.fe.sdis.proj1.protocols.AbstractProtocol;
-import pt.up.fe.sdis.proj1.utils.Communicator;
+import pt.up.fe.sdis.proj1.utils.BackupSystem;
 
 public class FileDeletion extends AbstractProtocol {
-    public FileDeletion(Communicator comm, byte[] fileID) {
+    public FileDeletion(BackupSystem bs, byte[] fileID) {
         super(null);
         Message msg = Message.makeDelete(fileID);
-        comm.MC.Sender.Send(msg);
+        bs.Comm.MC.Sender.Send(msg);
     }
 
     @Override

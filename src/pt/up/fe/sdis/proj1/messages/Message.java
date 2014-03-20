@@ -31,6 +31,16 @@ public class Message {
     public byte[] getFileID() {
         return fileID;
     }
+    
+    public String getHexFileID() {
+        if (fileID == null)
+            return null;
+        
+        StringBuilder sb = new StringBuilder();
+        for (int i = fileID.length - 1; i >= 0; --i)
+            sb.append(String.format("%02X", fileID[i]));
+        return sb.toString();
+    }
 
     private byte[] version = null;
 

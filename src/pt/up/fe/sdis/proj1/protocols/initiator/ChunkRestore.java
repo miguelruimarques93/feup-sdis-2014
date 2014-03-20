@@ -1,27 +1,29 @@
 package pt.up.fe.sdis.proj1.protocols.initiator;
 
+import java.util.Arrays;
+
 import pt.up.fe.sdis.proj1.Chunk;
 import pt.up.fe.sdis.proj1.messages.Message;
 import pt.up.fe.sdis.proj1.protocols.AbstractProtocol;
-import pt.up.fe.sdis.proj1.utils.Communicator;
+import pt.up.fe.sdis.proj1.utils.BackupSystem;
 import rx.Observable;
 import rx.functions.Func1;
 import rx.subjects.AsyncSubject;
 
 public class ChunkRestore extends AbstractProtocol {
-    public ChunkRestore(final Communicator comm, final byte[] fileID,
+    public ChunkRestore(final BackupSystem bs, final byte[] fileID,
             final int chunkNo) {
-        super(comm.MDR.Publisher);
+        super(bs.Comm.MDR.Publisher);
 
         Message msg = Message.makeGetChunk(fileID, chunkNo);
 
-        comm.MC.Sender.Send(msg);
+        bs.Comm.MC.Sender.Send(msg);
 
         this.start(new Func1<Message, Boolean>() {
             @Override
             public Boolean call(Message arg0) {
                 return arg0.type == Message.Type.CHUNK
-                        && arg0.getFileID().equals(fileID)
+                        && Arrays.equals(arg0.getFileID(), fileID)
                         && arg0.getChunkNo().equals(chunkNo);
             }
         });

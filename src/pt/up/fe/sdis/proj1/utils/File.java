@@ -1,5 +1,6 @@
 package pt.up.fe.sdis.proj1.utils;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
@@ -9,6 +10,8 @@ import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+
+import pt.up.fe.sdis.proj1.messages.Message;
 
 public class File {
     public File(String myAddr, String path) throws IOException,
@@ -59,6 +62,21 @@ public class File {
         raf.read(result);
         
         return result;
+    }
+    
+    public static void WriteChunk(Message msg) {
+        java.io.File dir = new java.io.File("backups/" + msg.getHexFileID());
+        if (!dir.exists()) dir.mkdirs();
+        java.io.File file = new java.io.File("backups/" + msg.getHexFileID() + "/" + Integer.toString(msg.getChunkNo()));
+        
+        if (file.exists()) return;
+        try {
+            FileOutputStream f = new FileOutputStream(file);
+            f.write(msg.getBody());
+            f.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
     
     byte[] _fileId;
