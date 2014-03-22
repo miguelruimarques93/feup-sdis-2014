@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.Collections;
 
 import pt.up.fe.sdis.proj1.Chunk;
+import pt.up.fe.sdis.proj1.utils.FileID;
 
 public class Message {
     public enum Type {
@@ -22,24 +23,22 @@ public class Message {
         this.type = type;
     }
 
-    private byte[] fileID = new byte[32];
+    private FileID fileID = null;
 
     protected void setFileID(byte[] f) {
+        fileID = new FileID(f);
+    }
+    
+    protected void setFileID(FileID f) {
         fileID = f;
     }
 
-    public byte[] getFileID() {
+    public FileID getFileID() {
         return fileID;
     }
     
     public String getHexFileID() {
-        if (fileID == null)
-            return null;
-        
-        StringBuilder sb = new StringBuilder();
-        for (int i = fileID.length - 1; i >= 0; --i)
-            sb.append(String.format("%02X", fileID[i]));
-        return sb.toString();
+        return fileID.toString();
     }
 
     private byte[] version = null;
@@ -95,8 +94,7 @@ public class Message {
 
         if (fileID != null) {
             sb.append(' ');
-            for (int i = fileID.length - 1; i >= 0; --i)
-                sb.append(String.format("%02X", fileID[i]));
+            sb.append(fileID.toString());
         }
 
         if (chunkNo != null)
@@ -132,7 +130,7 @@ public class Message {
         return result;
     }
 
-    public static Message makeStored(byte[] fileId, int chunkNo) {
+    public static Message makeStored(FileID fileId, int chunkNo) {
         Message result = new Message(Type.STORED);
         
         result.setVersion(1, 0);
@@ -203,8 +201,12 @@ public class Message {
                 .split("(?<=\\G..)")));
         Collections.reverse(chars);
 
-        for (int i = 0; i < msg.fileID.length; ++i)
-            msg.fileID[i] = (byte) Short.parseShort(chars.get(i), 16);
+        byte[] tempFileID = new byte[32];
+        
+        for (int i = 0; i < tempFileID.length; ++i)
+            tempFileID[i] = (byte) Short.parseShort(chars.get(i), 16);
+        
+        msg.setFileID(tempFileID);
 
         if (msg.type != Type.DELETE) {
             paramNum++;

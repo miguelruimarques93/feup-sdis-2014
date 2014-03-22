@@ -1,7 +1,5 @@
 package pt.up.fe.sdis.proj1.protocols.initiator;
 
-import java.util.Arrays;
-
 import pt.up.fe.sdis.proj1.Chunk;
 import pt.up.fe.sdis.proj1.messages.Message;
 import pt.up.fe.sdis.proj1.protocols.AbstractProtocol;
@@ -23,7 +21,7 @@ public class ChunkRestore extends AbstractProtocol {
             @Override
             public Boolean call(Message arg0) {
                 return arg0.type == Message.Type.CHUNK
-                        && Arrays.equals(arg0.getFileID(), fileID)
+                        && arg0.getFileID().equals(fileID)
                         && arg0.getChunkNo().equals(chunkNo);
             }
         });

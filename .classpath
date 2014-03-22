@@ -3,5 +3,6 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="deps/rxjava-core-0.17.0.jar"/>
+	<classpathentry kind="lib" path="deps/sqlite4java.jar" sourcepath="deps/sqlite4java-src.zip"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

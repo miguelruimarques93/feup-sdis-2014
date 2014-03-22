@@ -1,7 +1,6 @@
 package pt.up.fe.sdis.proj1.protocols.initiator;
 
 import java.net.InetAddress;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -27,7 +26,7 @@ public class ChunkBackup extends AbstractProtocol {
         start(new Func1<Message, Boolean>() {
             @Override
             public Boolean call(Message arg0) {
-                return arg0.type == Message.Type.STORED && Arrays.equals(msg.getFileID(), _chunk.fileID) && msg.getChunkNo().equals(_chunk.chunkNo);
+                return arg0.type == Message.Type.STORED && msg.getFileID().equals(_chunk.fileID) && msg.getChunkNo().equals(_chunk.chunkNo);
             }
         });
 

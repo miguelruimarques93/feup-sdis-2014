@@ -7,7 +7,7 @@ import pt.up.fe.sdis.proj1.messages.Message;
 import pt.up.fe.sdis.proj1.protocols.AbstractProtocol;
 import pt.up.fe.sdis.proj1.utils.BackupSystem;
 import pt.up.fe.sdis.proj1.utils.Communicator;
-import pt.up.fe.sdis.proj1.utils.File;
+import pt.up.fe.sdis.proj1.utils.MyFile;
 import rx.Scheduler;
 import rx.functions.Action1;
 import rx.functions.Func1;
@@ -31,7 +31,7 @@ public class PeerChunkBackup extends AbstractProtocol {
     protected void ProcessMessage(final Message msg) {
         System.out.println("Received : " + msg.getChunkNo());
 
-        File.WriteChunk(msg);
+        MyFile.WriteChunk(msg);
 
         Schedulers.io().schedule(new Action1<Scheduler.Inner>() {
             @Override

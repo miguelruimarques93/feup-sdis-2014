@@ -18,10 +18,10 @@ public class Main {
 
         
         
-        if (false) {
-            File file = new File("192.168.0.198", "[Raghu_Ramakrishnan,_Johannes_Gehrke]_Database_Man(BookFi.org).pdf");
+        if (true) {
+            MyFile file = new MyFile("192.168.0.198", "[Raghu_Ramakrishnan,_Johannes_Gehrke]_Database_Man(BookFi.org).pdf");
 
-            byte[] fileId = file.getFileId();
+            FileID fileId = file.getFileId();
 
             int cn = 0;
             byte[] body = null;

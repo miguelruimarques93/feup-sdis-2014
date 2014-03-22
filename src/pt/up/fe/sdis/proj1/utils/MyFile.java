@@ -13,8 +13,8 @@ import java.security.NoSuchAlgorithmException;
 
 import pt.up.fe.sdis.proj1.messages.Message;
 
-public class File {
-    public File(String myAddr, String path) throws IOException,
+public class MyFile {
+    public MyFile(String myAddr, String path) throws IOException,
             NoSuchAlgorithmException {
         _file = new java.io.File(path);
         _absolutePath = _file.getAbsolutePath();
@@ -32,10 +32,10 @@ public class File {
 
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         String text = _ownerIP + _absolutePath + _lastModifiedTime;
-        _fileId = digest.digest(text.getBytes(StandardCharsets.UTF_8));
+        _fileId = new FileID(digest.digest(text.getBytes(StandardCharsets.UTF_8)));
     }
 
-    public byte[] getFileId() {
+    public FileID getFileId() {
         return _fileId;
     }
     
@@ -65,9 +65,11 @@ public class File {
     }
     
     public static void WriteChunk(Message msg) {
-        java.io.File dir = new java.io.File("backups/" + msg.getHexFileID());
+        String directory = msg.type == Message.Type.PUTCHUNK ? "backups/" : "restores/";
+        
+        java.io.File dir = new java.io.File(directory + msg.getHexFileID());
         if (!dir.exists()) dir.mkdirs();
-        java.io.File file = new java.io.File("backups/" + msg.getHexFileID() + "/" + Integer.toString(msg.getChunkNo()));
+        java.io.File file = new java.io.File(directory + msg.getHexFileID() + "/" + Integer.toString(msg.getChunkNo()));
         
         if (file.exists()) return;
         try {
@@ -79,7 +81,17 @@ public class File {
         }
     }
     
-    byte[] _fileId;
+    @Override
+    public String toString() {
+        return _fileId.toString();
+    }
+    
+    @Override
+    public int hashCode() {
+        return _fileId.hashCode();
+    }
+    
+    FileID _fileId;
 
     private String _absolutePath;
     private java.io.File _file;
