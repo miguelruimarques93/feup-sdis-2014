@@ -1,6 +1,7 @@
 package pt.up.fe.sdis.proj1.utils;
 
 import java.io.BufferedInputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
@@ -29,29 +30,29 @@ public class FileRestore {
 	 * @throws IOException
 	 */
 	public void restoreFile() throws IOException{
-		java.io.File dir = new java.io.File("restores/" + _hexFileId);
+		File dir = new File("restores/" + _hexFileId);
 		if (!dir.exists()){
 			throw new NoSuchFileException("0"); //first chunk is missing
 		}
 
 		//get all chunk files from directory in lexicographical order
-		java.io.File[] fileListing = getSortedChunks(dir);
+		File[] fileListing = getSortedChunks(dir);
 		//ensure all chunks are available and valid, if not, throw exception
 		validateChunks(fileListing);
 		//create destination file and append all chunks to it
 		writeChunksToFile(fileListing);
 	}
 
-	private java.io.File[] getSortedChunks(java.io.File dir) {
-		java.io.File[] fileListing = dir.listFiles(new FilenameFilter() {
+	private File[] getSortedChunks(File dir) {
+		File[] fileListing = dir.listFiles(new FilenameFilter() {
 			@Override
-			public boolean accept(java.io.File dir, String name) {
+			public boolean accept(File dir, String name) {
 				return name.matches("^[0-9]+$");
 			}
 		});
-		Arrays.sort(fileListing, new Comparator<java.io.File>() {
+		Arrays.sort(fileListing, new Comparator<File>() {
 			@Override
-			public int compare(java.io.File arg0, java.io.File arg1) {
+			public int compare(File arg0, File arg1) {
 				Integer arg0Num = Integer.parseInt(arg0.getName());
 				Integer arg1Num = Integer.parseInt(arg1.getName());
 				return arg0Num.compareTo(arg1Num);
@@ -60,15 +61,15 @@ public class FileRestore {
 		return fileListing;
 	}
 
-	private void writeChunksToFile(java.io.File[] fileListing) throws IOException {
-		java.io.File file = new java.io.File(_destPath);
+	private void writeChunksToFile(File[] fileListing) throws IOException {
+		File file = new File(_destPath);
 		if(!file.exists()){
 			file.createNewFile();
 		}
 		try{
 			FileOutputStream output=new FileOutputStream(file);
 			byte[] chunk = new byte[64000];
-			for(java.io.File f: fileListing)
+			for(File f: fileListing)
 			{
 				BufferedInputStream bis = new BufferedInputStream(new FileInputStream(f));
 				bis.read(chunk);
@@ -80,11 +81,11 @@ public class FileRestore {
 		catch(IOException e){ //if anything goes wrong, delete file if created
 			if(file.exists())
 				file.delete();
-			throw new IOException(e);
+			throw e;
 		}
 	}
 
-	private void validateChunks(java.io.File[] fileListing) throws NoSuchFileException {
+	private void validateChunks(File[] fileListing) throws NoSuchFileException {
 		if(fileListing.length < 1){
 			throw new NoSuchFileException("0");
 		}

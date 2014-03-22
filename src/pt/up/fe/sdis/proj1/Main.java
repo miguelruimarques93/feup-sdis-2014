@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
+import pt.up.fe.sdis.proj1.protocols.initiator.ChunkBackup;
 import pt.up.fe.sdis.proj1.utils.BackupSystem;
 import pt.up.fe.sdis.proj1.utils.MyFile;
 
@@ -18,44 +19,46 @@ public class Main {
         
         MyFile mfile = new MyFile("192.168.0.197",
                 "[Raghu_Ramakrishnan,_Johannes_Gehrke]_Database_Man(BookFi.org).pdf");
-
+        
+        bf.removeOwnFile(mfile.getPath());
+        
 //        System.out.println("Before file: " + bf);
 //
-//        bf.addFile(mfile);
+//        bf.addFile(mfile.getFileId());
 //        System.out.println("Before chunks: " + bf);
 //
 //        for (int i = 0; i <= 10; ++i) {
-//            bf.addChunk(mfile, i);
+//            bf.addChunk(mfile.getFileId(), i);
 //        }
 //
 //        System.out.println("Before Ips: " + bf);
 //
-        String[] ips = { "/192.168.199", "/192.168.0.197", "/192.168.0.198" };
+//      String[] ips = { "/192.168.199", "/192.168.0.197", "/192.168.0.198" };
 //
 //        for (int i = 0; i <= 10; ++i) {
 //            for (String ip : ips)
-//                bf.addPeer(mfile, i, ip);
+//                bf.addPeer(mfile.getFileId(), i, ip);
 //        }
 //
 //        System.out.println(bf);
-        
-//        System.out.println("Before delete ips - " + bf);
 //        
-//        for (int i = 0; i <= 10; ++i) {
-//            for (String ip : ips)
-//                bf.removePeer(mfile, i, ip);
-//        }
-        
-//        System.out.println("Before remove chunks: " + bf);
-//
-//        for (int i = 0; i <= 10; ++i) {
-//            bf.removeChunk(mfile, i);
-//        }
+////        System.out.println("Before delete ips - " + bf);
+////        
+////        for (int i = 0; i <= 10; ++i) {
+////            for (String ip : ips)
+////                bf.removePeer(mfile, i, ip);
+////        }
 //        
-        
-//        System.out.println("Before remove file: " + bf);
+////        System.out.println("Before remove chunks: " + bf);
+////
+////        for (int i = 0; i <= 10; ++i) {
+////            bf.removeChunk(mfile, i);
+////        }
+////        
 //        
-        bf.removeFile(mfile);
+////        System.out.println("Before remove file: " + bf);
+////        
+////        bf.removeFile(mfile.getFileId());
         
         System.out.println(bf);
         

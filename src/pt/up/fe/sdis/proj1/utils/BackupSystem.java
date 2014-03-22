@@ -12,25 +12,31 @@ import com.almworks.sqlite4java.SQLiteException;
 import com.almworks.sqlite4java.SQLiteJob;
 import com.almworks.sqlite4java.SQLiteQueue;
 import com.almworks.sqlite4java.SQLiteStatement;
-import com.sun.istack.internal.NotNull;
 
 public class BackupSystem {
     public BackupSystem(Pair<String, Integer> mc, Pair<String, Integer> mdb,
-            Pair<String, Integer> mdr, String myAddr) throws IOException {
+            Pair<String, Integer> mdr, String myAddr) throws IOException, SQLiteException {
         Comm = new Communicator(mc, mdb, mdr, myAddr);
+        Files = new Files(new File("database.db"));
     }
 
+    public void shutdown() throws InterruptedException {
+        Files.dispose();
+    }
+    
     public final Communicator Comm;
+    
+    public final Files Files;
     
     public static class Files {
         private class FileAdder extends SQLiteJob<Object> {
-            public FileAdder(MyFile file) { 
-                _file = file;
+            public FileAdder(FileID file) { 
+                _fileId = file;
             }
 
             @Override
             protected Object job(SQLiteConnection connection) throws Throwable {
-                String fileID = _file.getFileId().toString();
+                String fileID = _fileId.toString();
                 
                 SQLiteStatement st = connection.prepare("INSERT INTO File (id, fileID) values(?, ?)");
                 try {
@@ -44,17 +50,17 @@ public class BackupSystem {
                 return null;
             }
             
-            private MyFile _file;
+            private FileID _fileId;
         }
 
         private class FileRemover extends SQLiteJob<Object> {
-            public FileRemover(MyFile file) { 
+            public FileRemover(FileID file) { 
                 _file = file;
             }
 
             @Override
             protected Object job(SQLiteConnection connection) throws Throwable {
-                String fileID = _file.getFileId().toString();
+                String fileID = _file.toString();
                 
                 SQLiteStatement st = connection.prepare("DELETE FROM File WHERE id = ?");
                 try {
@@ -67,18 +73,70 @@ public class BackupSystem {
                 return null;
             }
             
-            private MyFile _file;
+            private FileID _file;
+        }
+        
+        private class OwnFileAdder extends SQLiteJob<Object> {
+            public OwnFileAdder(String filePath, FileID fileId, Integer numberOfChunks) { 
+                _filePath = filePath;
+                _fileId = fileId;
+                _numberOfChunks = numberOfChunks;
+            }
+
+            @Override
+            protected Object job(SQLiteConnection connection) throws Throwable {
+                String fileID = _fileId.toString();
+                
+                SQLiteStatement st = connection.prepare("INSERT INTO OwnFile (id, filePath, fileId, numberChunks) values(?, ?, ?, ?)");
+                try {
+                    st.bind(1, _filePath.hashCode());
+                    st.bind(2, _filePath);
+                    st.bind(3, fileID);
+                    st.bind(4, _numberOfChunks);
+                    st.stepThrough();
+                } finally {
+                    st.dispose();
+                }
+                
+                return null;
+            }
+            
+            private String _filePath;
+            private FileID _fileId;
+            private Integer _numberOfChunks;
+        }
+
+        private class OwnFileRemover extends SQLiteJob<Object> {
+            public OwnFileRemover(String filePath) { 
+                _filePath = filePath;
+            }
+
+            @Override
+            protected Object job(SQLiteConnection connection) throws Throwable {
+                
+                SQLiteStatement st = connection.prepare("DELETE FROM OwnFile WHERE id = ?");
+                try {
+                    st.bind(1, _filePath.hashCode());
+                    st.stepThrough();
+                } finally {
+                    st.dispose();
+                }
+                
+                return null;
+            }
+            
+            private String _filePath;
         }
         
         private class ChunkAdder extends SQLiteJob<Object> {
-            public ChunkAdder(MyFile file, Integer chunkNo) {
+            public ChunkAdder(FileID file, Integer chunkNo) {
                 _file = file;
                 _chunkNo = chunkNo;
             }
             
             @Override
             protected Object job(SQLiteConnection connection) throws Throwable {
-              Pair<FileID, Integer> chunk = Pair.make_pair(_file.getFileId(), _chunkNo);
+              Pair<FileID, Integer> chunk = Pair.make_pair(_file, _chunkNo);
               
               SQLiteStatement st1 = null;
               try {
@@ -96,19 +154,19 @@ public class BackupSystem {
               return null;
             }
             
-            private MyFile _file;
+            private FileID _file;
             private Integer _chunkNo;
         }
 
         private class ChunkRemover extends SQLiteJob<Object> {
-            public ChunkRemover(MyFile file, Integer chunkNo) {
+            public ChunkRemover(FileID file, Integer chunkNo) {
                 _file = file;
                 _chunkNo = chunkNo;
             }
             
             @Override
             protected Object job(SQLiteConnection connection) throws Throwable {
-              Pair<FileID, Integer> chunk = Pair.make_pair(_file.getFileId(), _chunkNo);
+              Pair<FileID, Integer> chunk = Pair.make_pair(_file, _chunkNo);
               
               SQLiteStatement st1 = connection.prepare("DELETE FROM Chunk WHERE id = ?");
               try {
@@ -121,12 +179,12 @@ public class BackupSystem {
               return null;
             }
             
-            private MyFile _file;
+            private FileID _file;
             private Integer _chunkNo;
         }
 
         private class PeerAdder extends SQLiteJob<Object> {
-            public PeerAdder(MyFile file, Integer chunkNo, String peerIp) {
+            public PeerAdder(FileID file, Integer chunkNo, String peerIp) {
                 _file = file;
                 _chunkNo = chunkNo;
                 _peerIp = peerIp;
@@ -134,7 +192,7 @@ public class BackupSystem {
             
             @Override
             protected Object job(SQLiteConnection connection) throws Throwable {
-              Pair<FileID, Integer> chunk = Pair.make_pair(_file.getFileId(), _chunkNo);
+              Pair<FileID, Integer> chunk = Pair.make_pair(_file, _chunkNo);
               
               SQLiteStatement st1 = connection.prepare("INSERT INTO Ip (chunkId, IP) values (?, ?)");
               try {
@@ -148,13 +206,13 @@ public class BackupSystem {
               return null;
             }
             
-            private MyFile _file;
+            private FileID _file;
             private Integer _chunkNo;
             private String _peerIp;
         }
 
         private class PeerRemover extends SQLiteJob<Object> {
-            public PeerRemover(MyFile file, Integer chunkNo, String peerIp) {
+            public PeerRemover(FileID file, Integer chunkNo, String peerIp) {
                 _file = file;
                 _chunkNo = chunkNo;
                 _peerIp = peerIp;
@@ -162,7 +220,7 @@ public class BackupSystem {
             
             @Override
             protected Object job(SQLiteConnection connection) throws Throwable {
-              Pair<FileID, Integer> chunk = Pair.make_pair(_file.getFileId(), _chunkNo);
+              Pair<FileID, Integer> chunk = Pair.make_pair(_file, _chunkNo);
               
               SQLiteStatement st1 = connection.prepare("DELETE FROM Ip WHERE chunkId = ? AND IP = ?");
               try {
@@ -176,7 +234,7 @@ public class BackupSystem {
               return null;
             }
             
-            private MyFile _file;
+            private FileID _file;
             private Integer _chunkNo;
             private String _peerIp;
         }
@@ -185,15 +243,28 @@ public class BackupSystem {
             db.exec("BEGIN TRANSACTION;                                                                          "
                     + "PRAGMA foreign_keys = ON;                                                                   "
                     + "                                                                                            "
+                    + "DROP TABLE IF EXISTS OwnFile;                                                                "
                     + "DROP TABLE IF EXISTS File;                                                                  "
                     + "DROP TABLE IF EXISTS Chunk;                                                                 "
                     + "DROP TABLE IF EXISTS Ip;                                                                    "
+                    + "                                                                                            "
+                    + "CREATE TABLE OwnFile (                                                                      "
+                    + "    id INTEGER NOT NULL,                                                                    "
+                    + "    filePath TEXT NOT NULL,                                                                 "
+                    + "    fileId TEXT NOT NULL,                                                                   "
+                    + "    numberChunks INTEGER NOT NULL,                                                          "
+                    + "                                                                                            "
+                    + "    CONSTRAINT ownFile_PK PRIMARY KEY (id),                                                 "
+                    + "    CONSTRAINT ownFileId_Unique UNIQUE(fileId),                                             "
+                    + "    CONSTRAINT ownFilePath_Unitque UNIQUE(filePath),                                        "
+                    + "    CONSTRAINT ownFileId_Size64 CHECK(length(fileId) = 64)                                  "
+                    + ");                                                                                          "
                     + "                                                                                            "
                     + "CREATE TABLE File (                                                                         "
                     + "    id INTEGER NOT NULL,                                                                    "
                     + "    fileId TEXT NOT NULL,                                                                   "
                     + "                                                                                            "
-                    + "    CONSTRAINT file_PK Primary KEY (id),                                                    "
+                    + "    CONSTRAINT file_PK PRIMARY KEY (id),                                                    "
                     + "    CONSTRAINT fileId_Unique UNIQUE(fileId),                                                "
                     + "    CONSTRAINT fileId_Size64 CHECK(length(fileId) = 64)                                     "
                     + ");                                                                                          "
@@ -228,6 +299,10 @@ public class BackupSystem {
                     + "    SELECT File.fileId, Chunk.chunkNo                                                       "
                     + "    FROM Chunk JOIN File ON File.id = Chunk.fileId;                                         "
                     + "                                                                                            "
+                    + "CREATE VIEW FileChunkReplicationDegree AS                                                   "
+                    + "SELECT fileId, chunkNo, COUNT(*) AS replicationDegree                                       "
+                    + "FROM FileChunkIp                                                                            "
+                    + "GROUP BY fileId, chunkNo;                                                                   "
                     + "COMMIT;                                                                                     ");
         }
         
@@ -243,6 +318,21 @@ public class BackupSystem {
                 e.printStackTrace();
             } finally {
                 if (fileSt != null) fileSt.dispose();
+            }
+            
+            SQLiteStatement ownfileSt = null;
+            try {
+                ownfileSt = db.prepare("SELECT filePath, fileId, numberChunks FROM OwnFile");
+                while (ownfileSt.step()) {
+                    String filePath = ownfileSt.columnString(0);
+                    FileID fileId = new FileID(ownfileSt.columnString(1));
+                    Integer numberChunks = ownfileSt.columnInt(2);
+                    _ownFiles.put(filePath, Pair.make_pair(fileId, numberChunks));
+                }
+            } catch (SQLiteException e) {
+                e.printStackTrace();
+            } finally {
+                if (ownfileSt != null) ownfileSt.dispose();
             }
             
             SQLiteStatement chunkSt = null;
@@ -313,34 +403,61 @@ public class BackupSystem {
         public void dispose() throws InterruptedException {
             queue.stop(true).join();
         }
-        
-        public boolean containsFile(MyFile file) {
-            return _internalMap.containsKey(file.getFileId().toString());
+
+        public boolean containsOwnFile(String filePath) {
+            return _ownFiles.containsKey(filePath);
         }
         
-        public boolean addFile(@NotNull final MyFile file) {
+        public Pair<FileID, Integer> getOwnFileInfo(String filePath) {
+            return _ownFiles.get(filePath); 
+        }
+        
+        public boolean addOwnFile(String filePath, FileID fileId, Integer numberOfChunks) {
+            if (!containsOwnFile(filePath)) {
+                _ownFiles.put(filePath, Pair.make_pair(fileId, numberOfChunks));
+                queue.execute(new OwnFileAdder(filePath, fileId, numberOfChunks));
+            }
+            return true;
+        }
+        
+        public boolean addOwnFile(MyFile file) {
+            return addOwnFile(file.getPath(), file.getFileId(), file.getNumberOfChunks());
+        }
+        
+        public void removeOwnFile(String filePath) {
+            if (containsOwnFile(filePath)) {
+                _ownFiles.remove(filePath);
+                queue.execute(new OwnFileRemover(filePath));
+            }
+        }
+        
+        public boolean containsFile(FileID fileId) {
+            return _internalMap.containsKey(fileId.toString());
+        }
+        
+        public boolean addFile(FileID file) {
             if (!containsFile(file)) {
-                _internalMap.put(file.getFileId().toString(), new ConcurrentHashMap<Integer, HashSet<String>>());
+                _internalMap.put(file.toString(), new ConcurrentHashMap<Integer, HashSet<String>>());
                 queue.execute(new FileAdder(file));
             }
             return true;
         }
         
-        public void removeFile(@NotNull final MyFile file) {
+        public void removeFile(FileID file) {
             if (containsFile(file)) {
-                _internalMap.remove(file.getFileId().toString());
+                _internalMap.remove(file.toString());
                 queue.execute(new FileRemover(file));
             }
         }
-        
-        public boolean containsChunk(MyFile file, Integer chunkNo) {
-            ConcurrentHashMap<Integer, HashSet<String>> fileEntry = _internalMap.get(file.getFileId().toString());            
+
+        public boolean containsChunk(FileID fileId, Integer chunkNo) {
+            ConcurrentHashMap<Integer, HashSet<String>> fileEntry = _internalMap.get(fileId.toString());            
             return fileEntry != null && fileEntry.containsKey(chunkNo);
         }
         
-        public boolean addChunk(MyFile file, Integer chunkNo) {
+        public boolean addChunk(FileID file, Integer chunkNo) {
             addFile(file);
-            ConcurrentHashMap<Integer, HashSet<String>> fileEntry = _internalMap.get(file.getFileId().toString());
+            ConcurrentHashMap<Integer, HashSet<String>> fileEntry = _internalMap.get(file.toString());
             if (fileEntry == null) 
                 return false;
             
@@ -351,15 +468,15 @@ public class BackupSystem {
             return true;
         }
         
-        public void removeChunk(@NotNull MyFile file, Integer chunkNo) {
+        public void removeChunk(FileID file, Integer chunkNo) {
             if (containsChunk(file, chunkNo)) {
-                _internalMap.get(file.getFileId().toString()).remove(chunkNo);
+                _internalMap.get(file.toString()).remove(chunkNo);
                 queue.execute(new ChunkRemover(file, chunkNo));
             }
         }
         
-        public boolean containsPeer(MyFile file, Integer chunkNo, String peerIp) {
-            ConcurrentHashMap<Integer, HashSet<String>> fileEntry = _internalMap.get(file.getFileId().toString());  
+        public boolean containsPeer(FileID file, Integer chunkNo, String peerIp) {
+            ConcurrentHashMap<Integer, HashSet<String>> fileEntry = _internalMap.get(file.toString());  
             if (fileEntry == null) 
                 return false;
             
@@ -368,9 +485,9 @@ public class BackupSystem {
             return chunkPeers != null && chunkPeers.contains(peerIp);
         }
         
-        public boolean addPeer(MyFile file, Integer chunkNo, String peerIp) {
+        public boolean addPeer(FileID file, Integer chunkNo, String peerIp) {
             addChunk(file, chunkNo);
-            ConcurrentHashMap<Integer, HashSet<String>> fileEntry = _internalMap.get(file.getFileId().toString());
+            ConcurrentHashMap<Integer, HashSet<String>> fileEntry = _internalMap.get(file.toString());
             if (fileEntry == null)
                 return false;
             
@@ -385,23 +502,21 @@ public class BackupSystem {
             return true;
         }
         
-        public void removePeer(@NotNull MyFile file, Integer chunkNo, String peerIp) {
+        public void removePeer(FileID file, Integer chunkNo, String peerIp) {
             if (containsPeer(file, chunkNo, peerIp)) {
-                _internalMap.get(file.getFileId().toString()).get(chunkNo).remove(peerIp);
+                _internalMap.get(file.toString()).get(chunkNo).remove(peerIp);
                 queue.execute(new PeerRemover(file, chunkNo, peerIp));
             }
         }
         
-        
         @Override
         public String toString() { 
-            return _internalMap.toString();
+            return _internalMap.toString() + "\n" + _ownFiles.toString();
         }
         
         private SQLiteQueue queue;
         
+        private ConcurrentHashMap<String, Pair<FileID, Integer>> _ownFiles = new ConcurrentHashMap<String, Pair<FileID, Integer>>();
         private ConcurrentHashMap<String, ConcurrentHashMap<Integer, HashSet<String>>> _internalMap = new ConcurrentHashMap<String, ConcurrentHashMap<Integer, HashSet<String>>>();
     }
-
-    public ConcurrentHashMap<String, ConcurrentHashMap<Integer, HashSet<String>>> PeersWithChunk = new ConcurrentHashMap<String, ConcurrentHashMap<Integer, HashSet<String>>>();
 }

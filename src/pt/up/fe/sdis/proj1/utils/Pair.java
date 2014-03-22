@@ -7,6 +7,20 @@ public class Pair<T, V> {
     public V second;
     
     @Override
+    public boolean equals(Object other) {
+        if(other != null && (other instanceof Pair<?, ?>)) {
+            Pair<?, ?> p = (Pair<?, ?>)other;
+            return p.first.equals(first) && p.second.equals(second);
+        }
+        return false;
+    }
+    
+    @Override
+    public String toString() {
+        return "[" + first.toString() + ", " + second.toString() + "]";
+    }
+    
+    @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;

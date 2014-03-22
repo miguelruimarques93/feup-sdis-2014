@@ -4,6 +4,7 @@ import pt.up.fe.sdis.proj1.Chunk;
 import pt.up.fe.sdis.proj1.messages.Message;
 import pt.up.fe.sdis.proj1.protocols.AbstractProtocol;
 import pt.up.fe.sdis.proj1.utils.BackupSystem;
+import pt.up.fe.sdis.proj1.utils.MyFile;
 import rx.Observable;
 import rx.functions.Func1;
 import rx.subjects.AsyncSubject;
@@ -30,6 +31,7 @@ public class ChunkRestore extends AbstractProtocol {
     @Override
     public void ProcessMessage(Message msg) {
         Chunk c = new Chunk(msg.getChunkNo(), 0, msg.getFileID(), msg.getBody());
+        MyFile.WriteChunk(msg);
         _sub.onNext(c);
         _sub.onCompleted();
         finish();

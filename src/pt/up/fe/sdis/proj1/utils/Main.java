@@ -3,6 +3,8 @@ package pt.up.fe.sdis.proj1.utils;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
+import com.almworks.sqlite4java.SQLiteException;
+
 import pt.up.fe.sdis.proj1.Chunk;
 import pt.up.fe.sdis.proj1.protocols.initiator.ChunkBackup;
 import pt.up.fe.sdis.proj1.protocols.peers.PeerChunkBackup;
@@ -11,8 +13,10 @@ import pt.up.fe.sdis.proj1.protocols.peers.PeerStored;
 public class Main {
 
     public static void main(String[] args) throws IOException,
-            NoSuchAlgorithmException {
-        BackupSystem bs = new BackupSystem(Pair.make_pair("239.255.0.1",
+            NoSuchAlgorithmException, SQLiteException, InterruptedException {
+        BackupSystem bs = null;
+        
+        bs = new BackupSystem(Pair.make_pair("239.255.0.1",
                 11099), Pair.make_pair("239.255.0.1", 11091), Pair.make_pair(
                 "239.255.0.1", 11092), "192.168.0.198");
 
@@ -39,6 +43,8 @@ public class Main {
             new PeerChunkBackup(bs);
             new PeerStored(bs);
         }
+        
+        bs.shutdown();
     }
 
 }

@@ -11,6 +11,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+import pt.up.fe.sdis.proj1.Chunk;
 import pt.up.fe.sdis.proj1.messages.Message;
 
 public class MyFile {
@@ -43,9 +44,17 @@ public class MyFile {
         return _fileSize;
     }
 
+    public String getPath() { 
+        return _absolutePath;
+    }
+    
+    public int getNumberOfChunks() { 
+        return (int) Math.ceil(getFileSize() / (double)Chunk.MAX_CHUNK_SIZE);
+    }
+    
     public byte[] getChunk(int chunkNo) throws IOException {
-        long chunkPos = chunkNo * 64000;
-        long arrSize = Math.min(64000, _fileSize - chunkPos);
+        long chunkPos = chunkNo * Chunk.MAX_CHUNK_SIZE;
+        long arrSize = Math.min(Chunk.MAX_CHUNK_SIZE, _fileSize - chunkPos);
         if (chunkPos > _fileSize) {
             if (raf != null) {
                 raf.close();

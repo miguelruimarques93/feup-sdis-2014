@@ -18,6 +18,7 @@ public class PeerChunkBackup extends AbstractProtocol {
     public PeerChunkBackup(BackupSystem bs) {
         super(bs.Comm.MDB.Publisher);
         _comm = bs.Comm;
+        _bs = bs;
         this.start(new Func1<Message, Boolean>() {
 
             @Override
@@ -33,6 +34,8 @@ public class PeerChunkBackup extends AbstractProtocol {
 
         MyFile.WriteChunk(msg);
 
+        _bs.Files.addChunk(msg.getFileID(), msg.getChunkNo());
+        
         Schedulers.io().schedule(new Action1<Scheduler.Inner>() {
             @Override
             public void call(Scheduler.Inner arg0) {
@@ -43,6 +46,6 @@ public class PeerChunkBackup extends AbstractProtocol {
     }
 
     Communicator _comm;
-
+    BackupSystem _bs;
     private static Random rand = new Random();
 }

@@ -1,9 +1,25 @@
 package pt.up.fe.sdis.proj1.utils;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 public class FileID {
 
+    public FileID(String hexString) {
+        ArrayList<String> chars = new ArrayList<String>(Arrays.asList(hexString
+                .split("(?<=\\G..)")));
+        
+        if (chars.size() != 32) 
+            throw new IllegalArgumentException("FileID must have 32 bytes.");
+        
+        _fileID = new byte[32];
+        
+        for (int i = 0; i < _fileID.length; ++i)
+            _fileID[i] = (byte) Short.parseShort(chars.get(i), 16);
+        
+        _hexFileID = hexString;
+    }
+    
     public FileID(byte[] id) {
         if (id.length != 32)
             throw new IllegalArgumentException("FileID must have 32 bytes.");
