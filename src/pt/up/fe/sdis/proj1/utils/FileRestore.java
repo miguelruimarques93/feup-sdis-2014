@@ -1,0 +1,101 @@
+package pt.up.fe.sdis.proj1.utils;
+
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.nio.file.NoSuchFileException;
+import java.util.Arrays;
+import java.util.Comparator;
+
+import pt.up.fe.sdis.proj1.Chunk;
+
+public class FileRestore {
+	private String _hexFileId;
+	private String _destPath;
+
+	public FileRestore(String hexFileId, String destPath){
+		_hexFileId = hexFileId;
+		_destPath = destPath;
+	}
+
+	/**
+	 * Attempts to restore the file by reading chunks in the directory "restores/{fileHexId}"
+	 * 
+	 * If any chunks are invalid/missing, throws a NoSuchFileException with the number of the first invalid chunk.
+	 * 
+	 * Throws an IOException in case of other generic errors handling files.
+	 * @throws IOException
+	 */
+	public void restoreFile() throws IOException{
+		java.io.File dir = new java.io.File("restores/" + _hexFileId);
+		if (!dir.exists()){
+			throw new NoSuchFileException("0"); //first chunk is missing
+		}
+
+		//get all chunk files from directory in lexicographical order
+		java.io.File[] fileListing = getSortedChunks(dir);
+		//ensure all chunks are available and valid, if not, throw exception
+		validateChunks(fileListing);
+		//create destination file and append all chunks to it
+		writeChunksToFile(fileListing);
+	}
+
+	private java.io.File[] getSortedChunks(java.io.File dir) {
+		java.io.File[] fileListing = dir.listFiles(new FilenameFilter() {
+			@Override
+			public boolean accept(java.io.File dir, String name) {
+				return name.matches("^[0-9]+$");
+			}
+		});
+		Arrays.sort(fileListing, new Comparator<java.io.File>() {
+			@Override
+			public int compare(java.io.File arg0, java.io.File arg1) {
+				Integer arg0Num = Integer.parseInt(arg0.getName());
+				Integer arg1Num = Integer.parseInt(arg1.getName());
+				return arg0Num.compareTo(arg1Num);
+			}
+		});
+		return fileListing;
+	}
+
+	private void writeChunksToFile(java.io.File[] fileListing) throws IOException {
+		java.io.File file = new java.io.File(_destPath);
+		if(!file.exists()){
+			file.createNewFile();
+		}
+		try{
+			FileOutputStream output=new FileOutputStream(file);
+			byte[] chunk = new byte[64000];
+			for(java.io.File f: fileListing)
+			{
+				BufferedInputStream bis = new BufferedInputStream(new FileInputStream(f));
+				bis.read(chunk);
+				output.write(chunk, 0, (int)f.length());
+				bis.close();
+			}
+			output.close();
+		}
+		catch(IOException e){ //if anything goes wrong, delete file if created
+			if(file.exists())
+				file.delete();
+			throw new IOException(e);
+		}
+	}
+
+	private void validateChunks(java.io.File[] fileListing) throws NoSuchFileException {
+		if(fileListing.length < 1){
+			throw new NoSuchFileException("0");
+		}
+		for(int i=0; i < fileListing.length; i++){
+			if(Integer.parseInt(fileListing[i].getName()) != i){
+				throw new NoSuchFileException(Integer.toString(i));
+			}
+			if(i < fileListing.length-1 && fileListing[i].length() != Chunk.MAX_CHUNK_SIZE)
+				throw new NoSuchFileException(Integer.toString(i));
+			else if(i == fileListing.length-1 && fileListing[i].length() >= Chunk.MAX_CHUNK_SIZE)
+				throw new NoSuchFileException(Integer.toString(fileListing.length));
+		}
+	}
+}

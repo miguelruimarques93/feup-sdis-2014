@@ -1,7 +1,7 @@
 package pt.up.fe.sdis.proj1;
 
 public class Chunk {
-
+	public static final int MAX_CHUNK_SIZE = 64000;
     public Chunk(int cn, int rd, byte[] fid, byte[] d) {
         if (cn < 0 || cn > 999999) throw new IllegalArgumentException();
         chunkNo = cn;
