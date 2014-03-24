@@ -1,5 +1,8 @@
 package pt.up.fe.sdis.proj1.utils;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -71,6 +74,20 @@ public class MyFile {
         raf.read(result);
         
         return result;
+    }
+    
+    public static byte[] ReadChunk(FileID fileId, Integer chunkNo) throws IOException {
+    	File f = new File("backups/" + fileId.toString() + "/" + chunkNo.toString());
+    	if (!f.exists()) 
+    		return null;
+    	
+		BufferedInputStream bis = new BufferedInputStream(new FileInputStream(f));
+		byte[] chunk = new byte[(int)f.length()];
+		
+		bis.read(chunk);    	
+    	
+		bis.close();
+    	return chunk;
     }
     
     public static void WriteChunk(Message msg) {

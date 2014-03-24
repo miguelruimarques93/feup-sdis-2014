@@ -69,6 +69,10 @@ public class Message {
         return chunkNo;
     }
 
+    public Integer getReplicationDeg() {
+        return replicationDeg.intValue();
+    }
+    
     protected void setReplicationDeg(int i) {
         replicationDeg = (byte) i;
     }

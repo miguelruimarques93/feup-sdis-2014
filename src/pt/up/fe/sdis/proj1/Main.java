@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
-import pt.up.fe.sdis.proj1.protocols.initiator.ChunkBackup;
 import pt.up.fe.sdis.proj1.utils.BackupSystem;
 import pt.up.fe.sdis.proj1.utils.MyFile;
 
@@ -15,7 +14,7 @@ public class Main {
         File file = new File("data.db");
         //file.createNewFile();
         
-        BackupSystem.Files bf = new BackupSystem.Files(new File("data.db"));
+        BackupSystem.Files bf = new BackupSystem.Files(file);
         
         MyFile mfile = new MyFile("192.168.0.197",
                 "[Raghu_Ramakrishnan,_Johannes_Gehrke]_Database_Man(BookFi.org).pdf");
