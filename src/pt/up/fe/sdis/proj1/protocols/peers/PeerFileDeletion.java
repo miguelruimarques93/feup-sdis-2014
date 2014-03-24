@@ -5,7 +5,7 @@ import java.io.File;
 import pt.up.fe.sdis.proj1.messages.Message;
 import pt.up.fe.sdis.proj1.protocols.AbstractProtocol;
 import pt.up.fe.sdis.proj1.utils.BackupSystem;
-import rx.functions.Func1;
+import pt.up.fe.sdis.proj1.utils.MessageFilter;
 
 public class PeerFileDeletion extends AbstractProtocol {
 
@@ -13,12 +13,7 @@ public class PeerFileDeletion extends AbstractProtocol {
 		super(bs.Comm.MC.Publisher);
 		_bs = bs;
 
-		start(new Func1<Message, Boolean>(){
-			@Override
-			public Boolean call(Message arg0) {
-				return arg0.type == Message.Type.DELETE;
-			}
-		});
+		start(new MessageFilter(Message.Type.DELETE));
 	}
 
 	static public boolean deleteDirectory(File path) {

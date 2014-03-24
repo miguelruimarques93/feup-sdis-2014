@@ -15,7 +15,6 @@ import pt.up.fe.sdis.proj1.utils.MyFile;
 import rx.Scheduler;
 import rx.Subscription;
 import rx.functions.Action1;
-import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 
 public class PeerSpaceReclaiming extends AbstractProtocol {
@@ -24,12 +23,7 @@ public class PeerSpaceReclaiming extends AbstractProtocol {
 		super(bs.Comm.MC.Publisher);
 		_bs = bs;
 		
-		start(new Func1<Message, Boolean>(){
-			@Override
-			public Boolean call(Message arg0) {
-				return arg0.type == Message.Type.REMOVED;
-			}
-		});
+		start(new MessageFilter(Message.Type.REMOVED));
 	}
 
 	@Override

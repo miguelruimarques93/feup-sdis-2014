@@ -7,10 +7,10 @@ import pt.up.fe.sdis.proj1.messages.Message;
 import pt.up.fe.sdis.proj1.protocols.AbstractProtocol;
 import pt.up.fe.sdis.proj1.utils.BackupSystem;
 import pt.up.fe.sdis.proj1.utils.Communicator;
+import pt.up.fe.sdis.proj1.utils.MessageFilter;
 import pt.up.fe.sdis.proj1.utils.MyFile;
 import rx.Scheduler;
 import rx.functions.Action1;
-import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 
 public class PeerChunkBackup extends AbstractProtocol {
@@ -19,13 +19,8 @@ public class PeerChunkBackup extends AbstractProtocol {
         super(bs.Comm.MDB.Publisher);
         _comm = bs.Comm;
         _bs = bs;
-        this.start(new Func1<Message, Boolean>() {
-
-            @Override
-            public Boolean call(Message arg0) {
-                return arg0.type == Message.Type.PUTCHUNK;
-            }
-        });
+        
+        start(new MessageFilter(Message.Type.PUTCHUNK));
     }
 
     @Override

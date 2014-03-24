@@ -4,9 +4,10 @@ import pt.up.fe.sdis.proj1.Chunk;
 import pt.up.fe.sdis.proj1.messages.Message;
 import pt.up.fe.sdis.proj1.protocols.AbstractProtocol;
 import pt.up.fe.sdis.proj1.utils.BackupSystem;
+import pt.up.fe.sdis.proj1.utils.FileID;
+import pt.up.fe.sdis.proj1.utils.MessageFilter;
 import pt.up.fe.sdis.proj1.utils.MyFile;
 import rx.Observable;
-import rx.functions.Func1;
 import rx.subjects.AsyncSubject;
 
 public class ChunkRestore extends AbstractProtocol {
@@ -18,14 +19,7 @@ public class ChunkRestore extends AbstractProtocol {
 
         bs.Comm.MC.Sender.Send(msg);
 
-        this.start(new Func1<Message, Boolean>() {
-            @Override
-            public Boolean call(Message arg0) {
-                return arg0.type == Message.Type.CHUNK
-                        && arg0.getFileID().equals(fileID)
-                        && arg0.getChunkNo().equals(chunkNo);
-            }
-        });
+        start(new MessageFilter(Message.Type.CHUNK, new FileID(fileID), chunkNo));
     }
 
     @Override

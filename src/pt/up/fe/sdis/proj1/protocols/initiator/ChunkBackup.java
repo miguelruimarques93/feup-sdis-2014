@@ -9,26 +9,19 @@ import pt.up.fe.sdis.proj1.Chunk;
 import pt.up.fe.sdis.proj1.messages.Message;
 import pt.up.fe.sdis.proj1.protocols.AbstractProtocol;
 import pt.up.fe.sdis.proj1.utils.BackupSystem;
+import pt.up.fe.sdis.proj1.utils.MessageFilter;
 import rx.Scheduler;
 import rx.Scheduler.Inner;
 import rx.functions.Action1;
-import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 
 public class ChunkBackup extends AbstractProtocol {
-    private Chunk _chunk;
     
     public ChunkBackup(final BackupSystem bs, final Chunk chunk) {
         super(bs.Comm.MC.Publisher);
-        _chunk = chunk;
         final Message msg = Message.makePutChunk(chunk);
 
-        start(new Func1<Message, Boolean>() {
-            @Override
-            public Boolean call(Message arg0) {
-                return arg0.type == Message.Type.STORED && msg.getFileID().equals(_chunk.fileID) && msg.getChunkNo().equals(_chunk.chunkNo);
-            }
-        });
+        start(new MessageFilter(Message.Type.STORED, chunk.fileID, chunk.chunkNo));
 
         bs.Comm.MDB.Sender.Send(msg);
 

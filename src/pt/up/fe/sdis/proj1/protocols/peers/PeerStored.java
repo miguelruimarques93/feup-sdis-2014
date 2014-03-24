@@ -3,7 +3,7 @@ package pt.up.fe.sdis.proj1.protocols.peers;
 import pt.up.fe.sdis.proj1.messages.Message;
 import pt.up.fe.sdis.proj1.protocols.AbstractProtocol;
 import pt.up.fe.sdis.proj1.utils.BackupSystem;
-import rx.functions.Func1;
+import pt.up.fe.sdis.proj1.utils.MessageFilter;
 
 public class PeerStored extends AbstractProtocol {
 
@@ -12,12 +12,7 @@ public class PeerStored extends AbstractProtocol {
 
         _bs = bs;
         
-        this.start(new Func1<Message, Boolean>() {
-            @Override
-            public Boolean call(Message arg0) {
-                return arg0.type == Message.Type.STORED;
-            }
-        });
+        start(new MessageFilter(Message.Type.STORED));
     }
 
     @Override

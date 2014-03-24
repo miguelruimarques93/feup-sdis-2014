@@ -9,11 +9,11 @@ import pt.up.fe.sdis.proj1.messages.Message;
 import pt.up.fe.sdis.proj1.protocols.AbstractProtocol;
 import pt.up.fe.sdis.proj1.utils.BackupSystem;
 import pt.up.fe.sdis.proj1.utils.CounterObserver;
+import pt.up.fe.sdis.proj1.utils.MessageFilter;
 import pt.up.fe.sdis.proj1.utils.MyFile;
 import rx.Scheduler;
 import rx.Subscription;
 import rx.functions.Action1;
-import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 
 public class PeerChunkRestore extends AbstractProtocol {
@@ -22,12 +22,7 @@ public class PeerChunkRestore extends AbstractProtocol {
 		super(bs.Comm.MC.Publisher);
 		_bs = bs;
 		
-		start(new Func1<Message, Boolean>(){
-			@Override
-			public Boolean call(Message arg0) {
-				return arg0.type == Message.Type.GETCHUNK;
-			}
-		});
+		start(new MessageFilter(Message.Type.GETCHUNK));
 	}
 
 	@Override
@@ -46,15 +41,7 @@ public class PeerChunkRestore extends AbstractProtocol {
 			final Chunk chunk = new Chunk(msg.getChunkNo(), 0, msg.getFileID(), chunkArray);
 			
 			final Subscription sub = _bs.Comm.MDR.Publisher.getObservable()
-					.filter(new Func1<Message, Boolean>() {
-						@Override
-						public Boolean call(Message arg0) {
-							return arg0.type == Message.Type.CHUNK
-									&& arg0.getFileID().equals(msg.getFileID())
-									&& arg0.getChunkNo().equals(
-											msg.getChunkNo());
-						}
-					}).subscribe(obs);
+					.filter(new MessageFilter(Message.Type.CHUNK, msg.getFileID(), msg.getChunkNo())).subscribe(obs);
 			
 			
 	        Schedulers.io().schedule(new Action1<Scheduler.Inner>() {
