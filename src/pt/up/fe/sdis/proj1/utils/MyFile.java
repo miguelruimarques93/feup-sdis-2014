@@ -18,8 +18,7 @@ import pt.up.fe.sdis.proj1.Chunk;
 import pt.up.fe.sdis.proj1.messages.Message;
 
 public class MyFile {
-    public MyFile(String myAddr, String path) throws IOException,
-            NoSuchAlgorithmException {
+    public MyFile(String myAddr, String path) throws IOException {
         _file = new java.io.File(path);
         _absolutePath = _file.getAbsolutePath();
         
@@ -34,9 +33,13 @@ public class MyFile {
         _ownerIP = myAddr;
         _fileSize = attr.size();
 
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        String text = _ownerIP + _absolutePath + _lastModifiedTime;
-        _fileId = new FileID(digest.digest(text.getBytes(StandardCharsets.UTF_8)));
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            String text = _ownerIP + _absolutePath + _lastModifiedTime;
+            _fileId = new FileID(digest.digest(text.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException e) {
+            _fileId = null;
+        }
     }
 
     public FileID getFileId() {

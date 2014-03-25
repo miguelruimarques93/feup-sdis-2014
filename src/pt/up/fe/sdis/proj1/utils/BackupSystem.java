@@ -2,10 +2,13 @@ package pt.up.fe.sdis.proj1.utils;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import pt.up.fe.sdis.proj1.protocols.peers.*;
 
 import com.almworks.sqlite4java.SQLiteConnection;
 import com.almworks.sqlite4java.SQLiteException;
@@ -20,6 +23,13 @@ public class BackupSystem {
 		Files = new Files(new File("database.db"));
 	}
 
+	   public BackupSystem(Pair<String, Integer> mc, Pair<String, Integer> mdb,
+	            Pair<String, Integer> mdr, InetAddress myAddr) throws IOException, SQLiteException {
+	       String addr = myAddr.toString().substring(1);
+	        Comm = new Communicator(mc, mdb, mdr, addr);
+	        Files = new Files(new File("database.db"));
+	    }
+	
 	public void shutdown() throws InterruptedException {
 		Files.dispose();
 	}
@@ -545,5 +555,22 @@ public class BackupSystem {
 
 		private ConcurrentHashMap<String, Pair<FileID, Integer>> _ownFiles = new ConcurrentHashMap<String, Pair<FileID, Integer>>();
 		private ConcurrentHashMap<String, ConcurrentHashMap<Integer, Pair<Integer, HashSet<String>>>> _internalMap = new ConcurrentHashMap<String, ConcurrentHashMap<Integer, Pair<Integer, HashSet<String>>>>();
+	}
+
+	public static BackupSystem Start(Pair<String, Integer> mc, Pair<String, Integer> mdb, Pair<String, Integer> mdr, InetAddress intf) {
+	    try {
+	        BackupSystem bs = new BackupSystem(mc, mdb, mdr, intf);
+	        
+	        new PeerChunkBackup(bs);
+	        new PeerChunkRestore(bs);
+	        new PeerFileDeletion(bs);
+	        new PeerSpaceReclaiming(bs);
+	        new PeerStored(bs);
+	        
+	        return bs;
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return null;
+	    }
 	}
 }
