@@ -1,5 +1,6 @@
 package pt.up.fe.sdis.proj1.protocols.initiator;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.util.HashSet;
 import java.util.Set;
@@ -9,13 +10,24 @@ import pt.up.fe.sdis.proj1.Chunk;
 import pt.up.fe.sdis.proj1.messages.Message;
 import pt.up.fe.sdis.proj1.protocols.AbstractProtocol;
 import pt.up.fe.sdis.proj1.utils.BackupSystem;
+import pt.up.fe.sdis.proj1.utils.FileID;
 import pt.up.fe.sdis.proj1.utils.MessageFilter;
+import rx.Observable;
 import rx.Scheduler;
 import rx.Scheduler.Inner;
 import rx.functions.Action1;
 import rx.schedulers.Schedulers;
+import rx.subjects.AsyncSubject;
 
 public class ChunkBackup extends AbstractProtocol {
+    
+    public class ChunkBackupException extends IOException {
+        private static final long serialVersionUID = 1L;
+        
+        public ChunkBackupException(FileID fileId, Integer chunkNo) {
+            super("Timeout sending chunk '" + chunkNo + "' of file '" + fileId + "'");
+        }
+    }
     
     public ChunkBackup(final BackupSystem bs, final Chunk chunk) {
         super(bs.Comm.MC.Publisher);
@@ -38,7 +50,7 @@ public class ChunkBackup extends AbstractProtocol {
 
                     if (numRepliers < chunk.replicationDeg) {
                         if (NumTimes == 5) {
-                            // TODO replace with some kind of warning
+                            resultPublisher.onError(new ChunkBackupException(chunk.fileID, chunk.chunkNo));
                             finish();
                         } else {
                             _repliers.clear();
@@ -48,6 +60,7 @@ public class ChunkBackup extends AbstractProtocol {
                                     TimeUnit.MILLISECONDS);
                         }
                     } else {
+                        resultPublisher.onCompleted();
                         finish();
                     }
                 }
@@ -64,5 +77,9 @@ public class ChunkBackup extends AbstractProtocol {
         }
     }
 
+    private AsyncSubject<Object> resultPublisher = AsyncSubject.create();
+    
+    public Observable<Object> getObservable() { return resultPublisher.asObservable(); }
+    
     private Set<InetAddress> _repliers = new HashSet<InetAddress>();
 }

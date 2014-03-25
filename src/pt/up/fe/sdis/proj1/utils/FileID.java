@@ -53,6 +53,8 @@ public class FileID {
         return _hexFileID;
     }
 
+    public byte[] toArray() { return _fileID; }
+    
     private String _hexFileID = null;
     private byte[] _fileID;
 }

@@ -19,7 +19,7 @@ public class PeerChunkBackup extends AbstractProtocol {
         super(bs.Comm.MDB.Publisher);
         _comm = bs.Comm;
         _bs = bs;
-        
+
         start(new MessageFilter(Message.Type.PUTCHUNK));
     }
 
@@ -30,7 +30,7 @@ public class PeerChunkBackup extends AbstractProtocol {
         MyFile.WriteChunk(msg);
 
         _bs.Files.addChunk(msg.getFileID(), msg.getChunkNo(), msg.getReplicationDeg());
-        
+
         Schedulers.io().schedule(new Action1<Scheduler.Inner>() {
             @Override
             public void call(Scheduler.Inner arg0) {

@@ -28,7 +28,7 @@ public class PeerChunkRestore extends AbstractProtocol {
 	@Override
 	protected void ProcessMessage(final Message msg) {
 		if (_bs.Files.containsChunk(msg.getFileID(), msg.getChunkNo())) {
-			final CounterObserver obs = new CounterObserver();
+			final CounterObserver replyCounter = new CounterObserver();
 			
 			byte[] chunkArray;
 			
@@ -38,16 +38,16 @@ public class PeerChunkRestore extends AbstractProtocol {
 				return;
 			}
 			
-			final Chunk chunk = new Chunk(msg.getChunkNo(), 0, msg.getFileID(), chunkArray);
+			final Chunk chunk = new Chunk(msg.getChunkNo(), msg.getFileID(), chunkArray);
 			
 			final Subscription sub = _bs.Comm.MDR.Publisher.getObservable()
-					.filter(new MessageFilter(Message.Type.CHUNK, msg.getFileID(), msg.getChunkNo())).subscribe(obs);
+					.filter(new MessageFilter(Message.Type.CHUNK, msg.getFileID(), msg.getChunkNo())).subscribe(replyCounter);
 			
 			
 	        Schedulers.io().schedule(new Action1<Scheduler.Inner>() {
 	            @Override
 	            public void call(Scheduler.Inner arg0) {
-	                if (!obs.received()) _bs.Comm.MDR.Sender.Send(Message.makeChunk(chunk));
+	                if (!replyCounter.received()) _bs.Comm.MDR.Sender.Send(Message.makeChunk(chunk));
 	                sub.unsubscribe();
 	            }
 	        }, rand.nextInt(401), TimeUnit.MILLISECONDS);

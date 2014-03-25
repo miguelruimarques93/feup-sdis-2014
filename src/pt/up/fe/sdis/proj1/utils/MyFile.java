@@ -52,7 +52,7 @@ public class MyFile {
     }
     
     public int getNumberOfChunks() { 
-        return (int) Math.ceil(getFileSize() / (double)Chunk.MAX_CHUNK_SIZE);
+        return (int)(getFileSize() / Chunk.MAX_CHUNK_SIZE) + 1;
     }
     
     public byte[] getChunk(int chunkNo) throws IOException {

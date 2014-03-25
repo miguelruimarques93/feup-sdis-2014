@@ -16,7 +16,7 @@ public class PeerFileDeletion extends AbstractProtocol {
 		start(new MessageFilter(Message.Type.DELETE));
 	}
 
-	static public boolean deleteDirectory(File path) {
+	public static boolean deleteDirectory(File path) {
 		if( path.exists() ) {
 			File[] files = path.listFiles();
 			for(int i=0; i<files.length; i++) {

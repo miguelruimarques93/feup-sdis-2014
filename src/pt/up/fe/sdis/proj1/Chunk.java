@@ -14,8 +14,17 @@ public class Chunk {
         data = d;
     }   
     
+    public Chunk(int cn, FileID fid, byte[] d) {
+        if (cn < 0 || cn > 999999) throw new IllegalArgumentException();
+        chunkNo = cn;
+        replicationDeg = null;    
+        fileID = fid;
+        if (d.length > 64000) throw new IllegalArgumentException();
+        data = d;
+    }   
+    
     public final int chunkNo;
-    public final int replicationDeg;
+    public final Integer replicationDeg;
     public final FileID fileID;
     public final byte[] data;
 }

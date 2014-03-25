@@ -1,8 +1,9 @@
-package pt.up.fe.sdis.proj1.utils;
+package pt.up.fe.sdis.proj1.protocols.initiator;
 
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -11,16 +12,33 @@ import java.util.Arrays;
 import java.util.Comparator;
 
 import pt.up.fe.sdis.proj1.Chunk;
+import pt.up.fe.sdis.proj1.utils.BackupSystem;
+import pt.up.fe.sdis.proj1.utils.FileID;
+import pt.up.fe.sdis.proj1.utils.Pair;
+import rx.Observable;
+import rx.Observer;
+import rx.subjects.PublishSubject;
 
-public class FileRestore {
-	private String _hexFileId;
-	private String _destPath;
+public class FileRestore implements Observer<Object> {
 
-	public FileRestore(String hexFileId, String destPath){
-		_hexFileId = hexFileId;
+	public FileRestore(BackupSystem bs, String filePath, String destPath) throws FileNotFoundException{
+	    Pair<FileID, Integer> fileInfo = _bs.Files.getOwnFileInfo(filePath);
+	    
+	    if (fileInfo == null) 
+	        throw new FileNotFoundException();
+	    
+		_fileId = fileInfo.first;
 		_destPath = destPath;
+		_numChunks = fileInfo.second;
+		_bs = bs;
 	}
 
+	public void Restore() {	    
+        for (int i = 0; i < _numChunks; ++i) {
+            new ChunkRestore(_bs, _fileId, i).getObservable().subscribe(this);
+        }
+    }
+	
 	/**
 	 * Attempts to restore the file by reading chunks in the directory "restores/{fileHexId}"
 	 * 
@@ -29,8 +47,8 @@ public class FileRestore {
 	 * Throws an IOException in case of other generic errors handling files.
 	 * @throws IOException
 	 */
-	public void restoreFile() throws IOException{
-		File dir = new File("restores/" + _hexFileId);
+	private void restoreFile() throws IOException{
+		File dir = new File("restores/" + _fileId.toString());
 		if (!dir.exists()){
 			throw new NoSuchFileException("0"); //first chunk is missing
 		}
@@ -99,4 +117,33 @@ public class FileRestore {
 				throw new NoSuchFileException(Integer.toString(fileListing.length));
 		}
 	}
+
+    
+	@Override
+    public void onCompleted() {
+	    _numChunksReceived++;
+	    
+	    ps.onNext(_numChunksReceived / (double)_numChunks);
+	    
+	    if (_numChunks == _numChunksReceived)
+	        try { restoreFile(); ps.onCompleted(); } catch (IOException e) { ps.onError(e);}
+    }
+
+    @Override
+    public void onError(Throwable e) {
+        ps.onError(e);
+    }
+
+    @Override
+    public void onNext(Object t) { }
+    
+    public Observable<Double> getObservable() { return ps.asObservable(); }
+    
+    private BackupSystem _bs;
+    private FileID _fileId;
+    private String _destPath;
+    private int _numChunks;
+    private int _numChunksReceived = 0;
+    
+    private PublishSubject<Double> ps = PublishSubject.create();
 }
