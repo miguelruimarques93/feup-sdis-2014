@@ -17,7 +17,6 @@ import pt.up.fe.sdis.proj1.protocols.peers.PeerChunkRestore;
 import pt.up.fe.sdis.proj1.protocols.peers.PeerFileDeletion;
 import pt.up.fe.sdis.proj1.protocols.peers.PeerSpaceReclaiming;
 import pt.up.fe.sdis.proj1.protocols.peers.PeerStored;
-import rx.subjects.ReplaySubject;
 
 import com.almworks.sqlite4java.SQLiteConnection;
 import com.almworks.sqlite4java.SQLiteException;
@@ -655,8 +654,6 @@ public class BackupSystem {
             fileListener = l;
         }
         
-        private SQLiteQueue queue;
-        
         /**
          * Iterates through the backed up chunks and places them in a priority queue
          * 
@@ -710,6 +707,10 @@ public class BackupSystem {
             private Integer _desiredRD;
             private Integer _actualRD;
         }
+        
+        private SQLiteQueue queue;
+        
+        private BackupFileListener fileListener;
 
         private ConcurrentHashMap<String, Pair<FileID, Integer>> _ownFiles = new ConcurrentHashMap<String, Pair<FileID, Integer>>();
         
