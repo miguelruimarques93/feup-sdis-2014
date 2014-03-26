@@ -2,6 +2,7 @@ package pt.up.fe.sdis.proj1.gui;
 
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
+import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 
@@ -9,16 +10,24 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
+import pt.up.fe.sdis.proj1.protocols.initiator.FileBackup;
 import pt.up.fe.sdis.proj1.utils.BackupSystem;
 import pt.up.fe.sdis.proj1.utils.Pair;
+import rx.Observer;
+import rx.schedulers.Schedulers;
 
+import javax.swing.JFileChooser;
 import javax.swing.JList;
 import javax.swing.AbstractListModel;
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
+
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+
+import javax.swing.ListSelectionModel;
+import javax.swing.JProgressBar;
 
 public class MainFrame extends JFrame {
 
@@ -58,9 +67,13 @@ public class MainFrame extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setBounds(100, 100, 450, 300);
         setExtendedState(getExtendedState() | MAXIMIZED_BOTH);
+        contentPane = new JPanel();
+        contentPane.setBorder(new EmptyBorder(0, 0, 0, 0));
+        setContentPane(contentPane);
+        contentPane.setLayout(new BorderLayout(0, 0));
         
         JMenuBar menuBar = new JMenuBar();
-        setJMenuBar(menuBar);
+        contentPane.add(menuBar, BorderLayout.NORTH);
         
         JMenu mnFile = new JMenu("File");
         menuBar.add(mnFile);
@@ -72,12 +85,49 @@ public class MainFrame extends JFrame {
             }
         });
         mnFile.add(mntmExit);
-        contentPane = new JPanel();
-        contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
-        setContentPane(contentPane);
-        contentPane.setLayout(new BorderLayout(0, 0));
+        
+        final JProgressBar progressBar = new JProgressBar(0, 100);
+        
+        JMenuItem mntmBackup = new JMenuItem("Backup");
+        mntmBackup.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent arg0) {
+                JFileChooser fc = new JFileChooser();
+                int returnVal = fc.showOpenDialog(MainFrame.this);
+                if (returnVal == JFileChooser.APPROVE_OPTION) {
+                    File file = fc.getSelectedFile();
+                    FileBackup b = _backupSystem.backupFile(file);
+                    
+                    b.getProgressionObservable().observeOn(Schedulers.newThread()).subscribe(new Observer<Double>() {
+
+                        @Override
+                        public void onCompleted() {
+                            System.out.println("Completed");
+                        }
+
+                        @Override
+                        public void onError(Throwable e) {
+                            e.printStackTrace();
+                        }
+
+                        @Override
+                        public void onNext(final Double t) {
+                            EventQueue.invokeLater(new Runnable() {
+                                public void run() {
+                                    progressBar.setValue((int)(t * 100.0));
+                                }
+                            });
+                        }
+                    });
+                    
+                    b.Send();
+                }
+            }
+        });
+        menuBar.add(mntmBackup);
         
         JList list = new JList();
+        list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        list.setVisibleRowCount(15);
         list.setModel(new AbstractListModel() {
             String[] values = new String[] {"Ola"};
             public int getSize() {
@@ -88,6 +138,11 @@ public class MainFrame extends JFrame {
             }
         });
         contentPane.add(list, BorderLayout.WEST);
+        
+        
+        contentPane.add(progressBar, BorderLayout.SOUTH);
+        
+        GuiUtils.setSystemLookAndFeel();
     }
 
     public void initializeBackupSystem(Pair<String, Integer> mc, Pair<String, Integer> mdb, Pair<String, Integer> mdr, InetAddress intf) throws IOException {

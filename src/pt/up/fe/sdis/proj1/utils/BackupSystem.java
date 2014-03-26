@@ -9,11 +9,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import pt.up.fe.sdis.proj1.messages.Message;
+import pt.up.fe.sdis.proj1.protocols.initiator.FileBackup;
 import pt.up.fe.sdis.proj1.protocols.peers.PeerChunkBackup;
 import pt.up.fe.sdis.proj1.protocols.peers.PeerChunkRestore;
 import pt.up.fe.sdis.proj1.protocols.peers.PeerFileDeletion;
 import pt.up.fe.sdis.proj1.protocols.peers.PeerSpaceReclaiming;
 import pt.up.fe.sdis.proj1.protocols.peers.PeerStored;
+import rx.Observable;
 
 import com.almworks.sqlite4java.SQLiteConnection;
 import com.almworks.sqlite4java.SQLiteException;
@@ -32,6 +34,7 @@ public class BackupSystem {
         Files = new Files(new File("database.db"));
         initializePeerProtocols();
         _usedSpace = FileSystemUtils.fileSize(new File("backups"));
+        _addr = myAddr;
     }
 
     public void shutdown() {
@@ -255,7 +258,72 @@ public class BackupSystem {
         }
 
         private void createDatabase(SQLiteConnection db) throws SQLiteException {
-            db.exec("BEGIN TRANSACTION;                                                                          " + "PRAGMA foreign_keys = ON;                                                                   " + "                                                                                            " + "DROP TABLE IF EXISTS OwnFile;                                                                " + "DROP TABLE IF EXISTS File;                                                                  " + "DROP TABLE IF EXISTS Chunk;                                                                 " + "DROP TABLE IF EXISTS Ip;                                                                    " + "                                                                                            " + "CREATE TABLE OwnFile (                                                                      " + "    id INTEGER NOT NULL,                                                                    " + "    filePath TEXT NOT NULL,                                                                 " + "    fileId TEXT NOT NULL,                                                                   " + "    numberChunks INTEGER NOT NULL,                                                          " + "                                                                                            " + "    CONSTRAINT ownFile_PK PRIMARY KEY (id),                                                 " + "    CONSTRAINT ownFileId_Unique UNIQUE(fileId),                                             " + "    CONSTRAINT ownFilePath_Unitque UNIQUE(filePath),                                        " + "    CONSTRAINT ownFileId_Size64 CHECK(length(fileId) = 64)                                  " + ");                                                                                          " + "                                                                                            " + "CREATE TABLE File (                                                                         " + "    id INTEGER NOT NULL,                                                                    " + "    fileId TEXT NOT NULL,                                                                   " + "                                                                                            " + "    CONSTRAINT file_PK PRIMARY KEY (id),                                                    " + "    CONSTRAINT fileId_Unique UNIQUE(fileId),                                                " + "    CONSTRAINT fileId_Size64 CHECK(length(fileId) = 64)                                     " + ");                                                                                          " + "                                                                                            " + "CREATE TABLE Chunk (                                                                        " + "    id INTEGER NOT NULL,                                                                    " + "    fileId INTEGER NOT NULL,                                                                " + "    chunkNo INTEGER NOT NULL,                                                               " + "    replicationDegree INTEGER NOT NULL,													   " + "                                                                                            " + "    CONSTRAINT chunk_PK PRIMARY KEY (id),                                                   " + "    CONSTRAINT fileId_chunkNo_Unique UNIQUE(fileId, chunkNo),                               " + "    CONSTRAINT chunk_file_FK FOREIGN KEY (fileId) REFERENCES File(id) ON DELETE CASCADE     " + "    CONSTRAINT chunk_replication_degree_CHECK CHECK(replicationDegree >= 0 AND replicationDegree <= 9) " + ");                                                                                          " + "                                                                                            " + "CREATE TABLE Ip (                                                                           " + "    chunkId INTEGER NOT NULL,                                                               " + "    IP TEXT NOT NULL,                                                                       " + "                                                                                            " + "    CONSTRAINT Ip_PK PRIMARY KEY(chunkId, IP),                                              " + "    CONSTRAINT ip_chunk_FK FOREIGN KEY (chunkId) REFERENCES Chunk(id) ON DELETE CASCADE     " + ");                                                                                          " + "                                                                                            " + "DROP VIEW IF EXISTS FileChunk;                                                              " + "DROP VIEW IF EXISTS FileChunkIp;                                                            " + "                                                                                            " + "CREATE VIEW FileChunkIp AS                                                                  " + "    SELECT File.fileId, Chunk.chunkNo, Ip.IP                                                " + "    FROM Ip JOIN Chunk ON Ip.chunkId = Chunk.id                                             " + "            JOIN File ON File.id = Chunk.fileId;                                            " + "                                                                                            " + "CREATE VIEW FileChunk AS                                                                    " + "    SELECT File.fileId, Chunk.chunkNo, Chunk.replicationDegree                              " + "    FROM Chunk JOIN File ON File.id = Chunk.fileId;                                         " + "                                                                                            " + "CREATE VIEW FileChunkReplicationDegree AS                                                   " + "SELECT fileId, chunkNo, COUNT(*) AS replicationDegree                                       " + "FROM FileChunkIp                                                                            " + "GROUP BY fileId, chunkNo;                                                                   " + "COMMIT;                                                                                     ");
+            db.exec("BEGIN TRANSACTION;                                                                            "
+                    + "PRAGMA foreign_keys = ON;                                                                   "
+                    + "                                                                                            "
+                    + "DROP TABLE IF EXISTS OwnFile;                                                               "
+                    + "DROP TABLE IF EXISTS File;                                                                  "
+                    + "DROP TABLE IF EXISTS Chunk;                                                                 "
+                    + "DROP TABLE IF EXISTS Ip;                                                                    "
+                    + "                                                                                            "
+                    + "CREATE TABLE OwnFile (                                                                      "
+                    + "    id INTEGER NOT NULL,                                                                    "
+                    + "    filePath TEXT NOT NULL,                                                                 "
+                    + "    fileId TEXT NOT NULL,                                                                   "
+                    + "    numberChunks INTEGER NOT NULL,                                                          "
+                    + "                                                                                            "
+                    + "    CONSTRAINT ownFile_PK PRIMARY KEY (id),                                                 "
+                    + "    CONSTRAINT ownFileId_Unique UNIQUE(fileId),                                             "
+                    + "    CONSTRAINT ownFilePath_Unitque UNIQUE(filePath),                                        "
+                    + "    CONSTRAINT ownFileId_Size64 CHECK(length(fileId) = 64)                                  "
+                    + ");                                                                                          "
+                    + "                                                                                            "
+                    + "CREATE TABLE File (                                                                         "
+                    + "    id INTEGER NOT NULL,                                                                    "
+                    + "    fileId TEXT NOT NULL,                                                                   "
+                    + "                                                                                            "
+                    + "    CONSTRAINT file_PK PRIMARY KEY (id),                                                    "
+                    + "    CONSTRAINT fileId_Unique UNIQUE(fileId),                                                "
+                    + "    CONSTRAINT fileId_Size64 CHECK(length(fileId) = 64)                                     "
+                    + ");                                                                                          "
+                    + "                                                                                            "
+                    + "CREATE TABLE Chunk (                                                                        "
+                    + "    id INTEGER NOT NULL,                                                                    "
+                    + "    fileId INTEGER NOT NULL,                                                                "
+                    + "    chunkNo INTEGER NOT NULL,                                                               "
+                    + "    replicationDegree INTEGER NOT NULL DEFAULT 0,     									   "
+                    + "                                                                                            "
+                    + "    CONSTRAINT chunk_PK PRIMARY KEY (id),                                                   "
+                    + "    CONSTRAINT fileId_chunkNo_Unique UNIQUE(fileId, chunkNo),                               "
+                    + "    CONSTRAINT chunk_file_FK FOREIGN KEY (fileId) REFERENCES File(id) ON DELETE CASCADE     "
+                    + "    CONSTRAINT chunk_replication_degree_CHECK CHECK(replicationDegree >= 0 AND replicationDegree <= 9) "
+                    + ");                                                                                          "
+                    + "                                                                                            "
+                    + "CREATE TABLE Ip (                                                                           "
+                    + "    chunkId INTEGER NOT NULL,                                                               "
+                    + "    IP TEXT NOT NULL,                                                                       "
+                    + "                                                                                            "
+                    + "    CONSTRAINT Ip_PK PRIMARY KEY(chunkId, IP),                                              "
+                    + "    CONSTRAINT ip_chunk_FK FOREIGN KEY (chunkId) REFERENCES Chunk(id) ON DELETE CASCADE     "
+                    + ");                                                                                          "
+                    + "                                                                                            "
+                    + "DROP VIEW IF EXISTS FileChunk;                                                              "
+                    + "DROP VIEW IF EXISTS FileChunkIp;                                                            "
+                    + "                                                                                            "
+                    + "CREATE VIEW FileChunkIp AS                                                                  "
+                    + "    SELECT File.fileId, Chunk.chunkNo, Ip.IP                                                "
+                    + "    FROM Ip JOIN Chunk ON Ip.chunkId = Chunk.id                                             "
+                    + "            JOIN File ON File.id = Chunk.fileId;                                            "
+                    + "                                                                                            "
+                    + "CREATE VIEW FileChunk AS                                                                    "
+                    + "    SELECT File.fileId, Chunk.chunkNo, Chunk.replicationDegree                              "
+                    + "    FROM Chunk JOIN File ON File.id = Chunk.fileId;                                         "
+                    + "                                                                                            "
+                    + "CREATE VIEW FileChunkReplicationDegree AS                                                   "
+                    + "SELECT fileId, chunkNo, COUNT(*) AS replicationDegree                                       "
+                    + "FROM FileChunkIp                                                                            "
+                    + "GROUP BY fileId, chunkNo;                                                                   "
+                    + "COMMIT;                                                                                     ");
         }
 
         private void loadDatabase(SQLiteConnection db) {
@@ -554,11 +622,20 @@ public class BackupSystem {
         _usedSpace -= dirSize;
     }
 
+    public FileBackup backupFile(File file) {
+        try {
+        return new FileBackup(this, new MyFile(_addr, file.getAbsolutePath()), 1);
+        } catch (IOException e) {
+            return null;
+        }
+    }
+    
     private PeerChunkBackup _chunkBackup;
     private PeerChunkRestore _chunkRestore;
     private PeerFileDeletion _fileDeletion;
     private PeerSpaceReclaiming _spaceReclaiming;
     private PeerStored _stored;
+    private String _addr;
     private long _usedSpace;
 
 }

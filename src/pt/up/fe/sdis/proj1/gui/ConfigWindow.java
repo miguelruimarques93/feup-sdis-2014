@@ -330,9 +330,6 @@ public class ConfigWindow {
         gbc_btnNewButton.gridy = 5;
         _panelMain.add(btnNewButton, gbc_btnNewButton);
 
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception e) {
-        }
+        GuiUtils.setSystemLookAndFeel();
     }
 }
