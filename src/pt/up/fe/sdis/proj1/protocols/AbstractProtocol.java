@@ -20,7 +20,7 @@ public abstract class AbstractProtocol implements Observer<Message> {
         _subscription = _mcmp.getObservable().filter(filter).subscribe(this);
     }
     
-    protected final void finish() {
+    public final void finish() {
         _subscription.unsubscribe();
     }
     

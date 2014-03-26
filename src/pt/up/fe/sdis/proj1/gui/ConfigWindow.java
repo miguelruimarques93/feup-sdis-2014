@@ -4,8 +4,11 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
-import java.awt.GridLayout;
-import java.io.IOException;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -13,8 +16,8 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 
+import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -25,29 +28,10 @@ import javax.swing.UIManager;
 import pt.up.fe.sdis.proj1.gui.utils.IpVerifier;
 import pt.up.fe.sdis.proj1.gui.utils.PortVerifier;
 import pt.up.fe.sdis.proj1.gui.utils.TextFieldWithPlaceholder;
-import pt.up.fe.sdis.proj1.protocols.initiator.FileBackup;
-import pt.up.fe.sdis.proj1.utils.BackupSystem;
-import pt.up.fe.sdis.proj1.utils.MyFile;
 import pt.up.fe.sdis.proj1.utils.NetworkUtils;
 import pt.up.fe.sdis.proj1.utils.Pair;
 
-import java.awt.GridBagLayout;
-import java.awt.GridBagConstraints;
-import java.awt.Insets;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
-import java.awt.event.InputMethodListener;
-import java.awt.event.InputMethodEvent;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-
-import javax.swing.JButton;
-import javax.swing.filechooser.FileNameExtensionFilter;
-
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-
-public class Main {
+public class ConfigWindow {
 
     private JFrame frame;
     private JTextField txt_mc_ip;
@@ -62,7 +46,7 @@ public class Main {
         EventQueue.invokeLater(new Runnable() {
             public void run() {
                 try {
-                    Main window = new Main();
+                    ConfigWindow window = new ConfigWindow();
                     window.frame.setVisible(true);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -74,7 +58,7 @@ public class Main {
     /**
      * Create the application.
      */
-    public Main() {
+    public ConfigWindow() {
         initialize();
     }
 
@@ -105,7 +89,7 @@ public class Main {
     private JPanel _panelMain = new JPanel();
     private GridBagLayout _gbl__panelMain = new GridBagLayout();
     private JLabel _lblNetworkInterface = new JLabel("Network Interface:");
-    private JComboBox<InetAddress> _cmbNetworkInterface;
+    private JComboBox _cmbNetworkInterface;
     private final JLabel lblInvalidMC = new JLabel("Invalid IP/Port");
     private JTextField txt_mdb_port;
     private JTextField txt_mdr_port;
@@ -119,10 +103,12 @@ public class Main {
      */
     private void initialize() {
         frame = new JFrame();
-        frame.setBounds(100, 100, 760, 208);
+        frame.setResizable(false);        
+        frame.setBounds(100, 100, 517, 208);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.getContentPane().setLayout(new BorderLayout(0, 0));
-
+        frame.setLocationRelativeTo(null);
+        
         InetAddress[] comboBoxElements = getPossibleInterfaces();
 
         
@@ -139,7 +125,7 @@ public class Main {
         _gbl__panelMain.rowWeights = new double[]{0.0, 0.0, 1.0, 0.0};
         _panelMain.setLayout(_gbl__panelMain);
         
-        _cmbNetworkInterface = new JComboBox<InetAddress>(comboBoxElements);
+        _cmbNetworkInterface = new JComboBox(comboBoxElements);
         _lblNetworkInterface.setLabelFor(_cmbNetworkInterface);
         
                 
@@ -313,32 +299,28 @@ public class Main {
         btnNewButton = new JButton("Start System");
         btnNewButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent arg0) {
-                InetAddress intf = (InetAddress)_cmbNetworkInterface.getSelectedItem();
-                
-                Pair<String, Integer> mc = Pair.make_pair(txt_mc_ip.getText(), Integer.parseInt(txt_mc_port.getText()));
-                Pair<String, Integer> mdb = Pair.make_pair(txt_mdb_ip.getText(), Integer.parseInt(txt_mdb_port.getText()));
-                Pair<String, Integer> mdr = Pair.make_pair(txt_mdr_ip.getText(), Integer.parseInt(txt_mdr_port.getText()));
-                
-                if (    NetworkUtils.isIPAddress(mc.first) &&
-                        NetworkUtils.isIPAddress(mdb.first) &&
-                        NetworkUtils.isIPAddress(mdr.first) &&
-                        NetworkUtils.isValidPort(mc.second) &&
-                        NetworkUtils.isValidPort(mdb.second) &&
-                        NetworkUtils.isValidPort(mdr.second)) {
-                    _bs = BackupSystem.Start(mc, mdb, mdr, intf);
-                    JFileChooser chooser = new JFileChooser();
-                    FileNameExtensionFilter filter = new FileNameExtensionFilter(
-                        "JPG & GIF Images", "jpg", "gif");
-                    chooser.setFileFilter(filter);
-                    int returnVal = chooser.showOpenDialog(_panelMain);
-                    if(returnVal == JFileChooser.APPROVE_OPTION) {
-                       try {
-                        new FileBackup(_bs, new MyFile(intf.toString().substring(1), chooser.getSelectedFile().getAbsolutePath()), 1);
-                    } catch (IOException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
+                try {
+                    final InetAddress intf = (InetAddress) _cmbNetworkInterface.getSelectedItem();
+
+                    final Pair<String, Integer> mc = Pair.make_pair(txt_mc_ip.getText(), Integer.parseInt(txt_mc_port.getText()));
+                    final Pair<String, Integer> mdb = Pair.make_pair(txt_mdb_ip.getText(), Integer.parseInt(txt_mdb_port.getText()));
+                    final Pair<String, Integer> mdr = Pair.make_pair(txt_mdr_ip.getText(), Integer.parseInt(txt_mdr_port.getText()));
+
+                    if (NetworkUtils.isIPAddress(mc.first) && NetworkUtils.isIPAddress(mdb.first) && NetworkUtils.isIPAddress(mdr.first) && NetworkUtils.isValidPort(mc.second) && NetworkUtils.isValidPort(mdb.second) && NetworkUtils.isValidPort(mdr.second)) {
+                        EventQueue.invokeLater(new Runnable() {
+                            public void run() {
+                                try {
+                                    MainFrame frm = new MainFrame(mc, mdb, mdr, intf);
+                                    frame.dispose();
+                                    frm.setVisible(true);
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        });
                     }
-                    }
+                } catch (Exception e) {
+                    return;
                 }
             }
         });
@@ -353,6 +335,4 @@ public class Main {
         } catch (Exception e) {
         }
     }
-
-    private BackupSystem _bs = null;
 }

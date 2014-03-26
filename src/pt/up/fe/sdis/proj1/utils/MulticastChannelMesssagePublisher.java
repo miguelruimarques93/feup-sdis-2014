@@ -50,7 +50,6 @@ public class MulticastChannelMesssagePublisher extends Thread {
         while (true) {
             buffer = new byte[_packetSize];
             try {
-                System.out.println("Waiting...");
                 _mCastSocket.receive(dp);
                 _subject.onNext(Pair.make_pair(Arrays.copyOf(dp.getData(), dp.getLength()), dp.getAddress()));
             } catch (Exception e) {
