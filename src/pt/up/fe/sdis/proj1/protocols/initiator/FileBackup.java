@@ -40,7 +40,7 @@ public class FileBackup implements Observer<Object> {
         try {
             _numChunks = _file.getNumberOfChunks();
             _numChunksToBeSent = _numChunks;
-            for (int i = 0; i < 10; ++i, --_numChunksToBeSent) {
+            for (int i = 0; i < Math.min(10, _numChunks); ++i, --_numChunksToBeSent) {
                 byte[] chunkArray = _file.getChunk(i);
                 Chunk chunk = new Chunk(i, _replicationDegree, _file.getFileId(), chunkArray);
                 new ChunkBackup(_bs, chunk).getObservable().subscribe(this);

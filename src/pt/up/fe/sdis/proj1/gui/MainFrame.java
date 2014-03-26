@@ -1,10 +1,13 @@
 package pt.up.fe.sdis.proj1.gui;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.Date;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -16,6 +19,7 @@ import pt.up.fe.sdis.proj1.utils.Pair;
 import rx.Observer;
 import rx.schedulers.Schedulers;
 
+import javax.swing.DefaultListModel;
 import javax.swing.JFileChooser;
 import javax.swing.JList;
 import javax.swing.AbstractListModel;
@@ -29,12 +33,22 @@ import java.awt.event.ActionEvent;
 import javax.swing.ListSelectionModel;
 import javax.swing.JProgressBar;
 
+import java.awt.GridLayout;
+import java.awt.FlowLayout;
+import java.awt.GridBagLayout;
+import java.awt.GridBagConstraints;
+import java.awt.Insets;
+import net.miginfocom.swing.MigLayout;
+
 public class MainFrame extends JFrame {
 
     private static final long serialVersionUID = 1L;
 
     private JPanel contentPane;
     private BackupSystem _backupSystem = null;
+    private JList<String> list;
+    private DefaultListModel<String> listModel;
+    private JProgressBar progressBar;
 
     /**
      * Create the frame.
@@ -65,8 +79,8 @@ public class MainFrame extends JFrame {
     
     public void initializeGUI() {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setBounds(100, 100, 450, 300);
-        setExtendedState(getExtendedState() | MAXIMIZED_BOTH);
+        setBounds(100, 100, 970, 605);
+        // setExtendedState(getExtendedState() | MAXIMIZED_BOTH);
         contentPane = new JPanel();
         contentPane.setBorder(new EmptyBorder(0, 0, 0, 0));
         setContentPane(contentPane);
@@ -86,8 +100,6 @@ public class MainFrame extends JFrame {
         });
         mnFile.add(mntmExit);
         
-        final JProgressBar progressBar = new JProgressBar(0, 100);
-        
         JMenuItem mntmBackup = new JMenuItem("Backup");
         mntmBackup.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent arg0) {
@@ -97,11 +109,13 @@ public class MainFrame extends JFrame {
                     File file = fc.getSelectedFile();
                     FileBackup b = _backupSystem.backupFile(file);
                     
+                    final Date start = new Date();
+                    
                     b.getProgressionObservable().observeOn(Schedulers.newThread()).subscribe(new Observer<Double>() {
-
+                        
                         @Override
                         public void onCompleted() {
-                            System.out.println("Completed");
+                            System.out.println("Completed in " + (new Date().getTime() - start.getTime()) + " ms");
                         }
 
                         @Override
@@ -125,28 +139,48 @@ public class MainFrame extends JFrame {
         });
         menuBar.add(mntmBackup);
         
-        JList list = new JList();
+        JPanel panel = new JPanel();
+        panel.setSize(new Dimension(0, 10));
+        panel.setMinimumSize(new Dimension(100, 500));
+        contentPane.add(panel, BorderLayout.SOUTH);
+        listModel = new DefaultListModel<String>();
+        panel.setLayout(new MigLayout("", "[100px,grow]", "[100px][14]"));
+        
+        list = new JList<String>();
+        list.setValueIsAdjusting(true);
+        list.setModel(listModel);
+        list.setPreferredSize(new Dimension(100, 100));
+        panel.add(list, "cell 0 0,growx,aligny top");
+        list.setSize(100, 500);
         list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        list.setVisibleRowCount(15);
-        list.setModel(new AbstractListModel() {
-            String[] values = new String[] {"Ola"};
-            public int getSize() {
-                return values.length;
-            }
-            public Object getElementAt(int index) {
-                return values[index];
-            }
-        });
-        contentPane.add(list, BorderLayout.WEST);
+        list.setVisibleRowCount(34);
+        list.setMinimumSize(new Dimension(100, 150));
         
-        
-        contentPane.add(progressBar, BorderLayout.SOUTH);
+        progressBar = new JProgressBar(0, 100);
+        panel.add(progressBar, "cell 0 1,growx,aligny center");
         
         GuiUtils.setSystemLookAndFeel();
     }
 
     public void initializeBackupSystem(Pair<String, Integer> mc, Pair<String, Integer> mdb, Pair<String, Integer> mdr, InetAddress intf) throws IOException {
         _backupSystem = new BackupSystem(mc, mdb, mdr, intf);
+        
+        if (_backupSystem != null) {
+            _backupSystem.Files.setFileListener(new BackupSystem.BackupFileListener() {
+                
+                @Override
+                public void FileRemoved(String filePath) {
+                    listModel.removeElement(filePath);              
+                    list.setModel(listModel);
+                }
+                
+                @Override
+                public void FileAdded(String filePath) {
+                    listModel.addElement(filePath);
+                    list.setModel(listModel);
+                }
+            });
+        }
     }
 
     @Override
