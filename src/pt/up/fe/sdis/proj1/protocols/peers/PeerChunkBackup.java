@@ -5,10 +5,10 @@ import java.util.concurrent.TimeUnit;
 
 import pt.up.fe.sdis.proj1.messages.Message;
 import pt.up.fe.sdis.proj1.protocols.AbstractProtocol;
+import pt.up.fe.sdis.proj1.protocols.initiator.SpaceReclaiming;
 import pt.up.fe.sdis.proj1.utils.BackupSystem;
 import pt.up.fe.sdis.proj1.utils.Communicator;
 import pt.up.fe.sdis.proj1.utils.MessageFilter;
-import pt.up.fe.sdis.proj1.utils.MyFile;
 import rx.Scheduler;
 import rx.functions.Action1;
 import rx.schedulers.Schedulers;
@@ -25,18 +25,21 @@ public class PeerChunkBackup extends AbstractProtocol {
 
     @Override
     protected void ProcessMessage(final Message msg) {
-        System.out.println("Received : " + msg.getChunkNo());
+        if(_bs.getAvailableSpace() < msg.getBody().length)
+            new SpaceReclaiming(_bs, true);
 
-        _bs.writeChunk(msg);
+        if(_bs.getAvailableSpace() >= msg.getBody().length){
+            _bs.writeChunk(msg);
 
-        _bs.Files.addChunk(msg.getFileID(), msg.getChunkNo(), msg.getReplicationDeg());
+            _bs.Files.addChunk(msg.getFileID(), msg.getChunkNo(), msg.getReplicationDeg());
 
-        Schedulers.io().schedule(new Action1<Scheduler.Inner>() {
-            @Override
-            public void call(Scheduler.Inner arg0) {
-                _comm.MC.Sender.Send(Message.makeStored(msg.getFileID(), msg.getChunkNo()));
-            }
-        }, rand.nextInt(401), TimeUnit.MILLISECONDS);
+            Schedulers.io().schedule(new Action1<Scheduler.Inner>() {
+                @Override
+                public void call(Scheduler.Inner arg0) {
+                    _comm.MC.Sender.Send(Message.makeStored(msg.getFileID(), msg.getChunkNo()));
+                }
+            }, rand.nextInt(401), TimeUnit.MILLISECONDS);
+        }
     }
 
     Communicator _comm;

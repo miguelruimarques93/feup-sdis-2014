@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.PriorityQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -654,12 +656,61 @@ public class BackupSystem {
         }
         
         private SQLiteQueue queue;
-
-        private BackupFileListener fileListener;
         
-        /*
-         * Caminho -> [FileID, ReplicationDegree]
+        /**
+         * Iterates through the backed up chunks and places them in a priority queue
+         * 
+         * @return returns a priority queue with the backedup chunks ordered descendingly by (ActualReplicationDegree - DesiredReplicationDegree)
          */
+        public PriorityQueue<ChunkInfo> getChunksToRemove() {
+            
+            PriorityQueue<ChunkInfo> result = new PriorityQueue<ChunkInfo>();
+            
+            for (Map.Entry<String, ConcurrentHashMap<Integer, Pair<Integer, HashSet<String>>>> file : _internalMap.entrySet()) {
+                
+                for(Map.Entry<Integer, Pair<Integer, HashSet<String>>> chunk : file.getValue().entrySet()){
+                    Integer actualDegree = chunk.getValue().second.size();
+                    ChunkInfo info = new ChunkInfo(file.getKey(), chunk.getKey(), chunk.getValue().first, actualDegree);
+                    result.offer(info);
+                }
+                
+            }
+            
+            return result;
+        }
+        
+        public static class ChunkInfo implements Comparable<ChunkInfo>{
+            
+            ChunkInfo(String fileId, Integer chunkNo, Integer desiredRD, Integer actualRD){
+                _fileId = new FileID(fileId);
+                _desiredRD = desiredRD;
+                _actualRD = actualRD;
+                _chunkNo = chunkNo;
+            }
+            
+            public Integer getExcessDegree(){
+                return _actualRD-_desiredRD;
+            }
+            
+            public FileID getFileId(){
+                return _fileId;
+            }
+            
+            public Integer getChunkNo(){
+                return _chunkNo;
+            }
+            
+            @Override
+            public int compareTo(ChunkInfo arg0) {
+                return arg0.getExcessDegree() - getExcessDegree();
+            }
+            
+            private Integer _chunkNo;
+            private FileID _fileId;
+            private Integer _desiredRD;
+            private Integer _actualRD;
+        }
+
         private ConcurrentHashMap<String, Pair<FileID, Integer>> _ownFiles = new ConcurrentHashMap<String, Pair<FileID, Integer>>();
         
         /*
@@ -688,10 +739,6 @@ public class BackupSystem {
         String filePath = (msg.type == Message.Type.PUTCHUNK ? "backups/" : "restores/") + msg.getHexFileID() + "/" + msg.getChunkNo().toString();
         long writtenSize = FileSystemUtils.WriteByteArray(filePath, msg.getBody());
         _usedSpace += writtenSize;
-    }
-
-    public long getUsedSpace() {
-        return _usedSpace;
     }
 
     public void deleteChunk(FileID fileId, @NotNull Integer chunkNo) {
@@ -723,6 +770,22 @@ public class BackupSystem {
 
     
     
+
+    public long getUsedSpace() {
+        return _usedSpace;
+    }
+
+    public void setTotalSpace(long totalSpace){
+        _totalSpace = totalSpace;
+    }
+    
+    public long getTotalSpace(){
+        return _totalSpace;
+    }
+    
+    public long getAvailableSpace(){
+        return _totalSpace-_usedSpace;
+    }
     
     private PeerChunkBackup _chunkBackup;
     private PeerChunkRestore _chunkRestore;
@@ -731,5 +794,6 @@ public class BackupSystem {
     private PeerStored _stored;
     private String _addr;
     private long _usedSpace;
+    private long _totalSpace;
 
 }

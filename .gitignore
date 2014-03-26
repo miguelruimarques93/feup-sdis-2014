@@ -4,5 +4,7 @@
 *.jar
 *.war
 *.ear
+database.db
 /bin
 /backups
+/restores
