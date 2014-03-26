@@ -7,7 +7,6 @@ import pt.up.fe.sdis.proj1.protocols.AbstractProtocol;
 import pt.up.fe.sdis.proj1.utils.BackupSystem;
 import pt.up.fe.sdis.proj1.utils.FileID;
 import pt.up.fe.sdis.proj1.utils.MessageFilter;
-import pt.up.fe.sdis.proj1.utils.MyFile;
 import rx.Observable;
 import rx.Scheduler;
 import rx.Scheduler.Inner;
@@ -19,6 +18,8 @@ public class ChunkRestore extends AbstractProtocol {
     public ChunkRestore(final BackupSystem bs, final FileID fileID,
             final int chunkNo) {
         super(bs.Comm.MDR.Publisher);
+        
+        _bs = bs;
 
         Message msg = Message.makeGetChunk(fileID.toArray(), chunkNo);
         bs.Comm.MC.Sender.Send(msg);
@@ -35,7 +36,7 @@ public class ChunkRestore extends AbstractProtocol {
 
     @Override
     public void ProcessMessage(Message msg) {
-        MyFile.WriteChunk(msg);
+        _bs.writeChunk(msg);
         _sub.onCompleted();
         finish();
     }
@@ -45,4 +46,5 @@ public class ChunkRestore extends AbstractProtocol {
     }
 
     private AsyncSubject<Object> _sub = AsyncSubject.create();
+    private BackupSystem _bs;
 }

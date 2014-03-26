@@ -3,7 +3,6 @@ package pt.up.fe.sdis.proj1.utils;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
@@ -15,7 +14,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 import pt.up.fe.sdis.proj1.Chunk;
-import pt.up.fe.sdis.proj1.messages.Message;
 
 public class MyFile {
     public MyFile(String myAddr, String path) throws IOException {
@@ -92,23 +90,7 @@ public class MyFile {
 		bis.close();
     	return chunk;
     }
-    
-    public static void WriteChunk(Message msg) {
-        String directory = msg.type == Message.Type.PUTCHUNK ? "backups/" : "restores/";
-        
-        java.io.File dir = new java.io.File(directory + msg.getHexFileID());
-        if (!dir.exists()) dir.mkdirs();
-        java.io.File file = new java.io.File(directory + msg.getHexFileID() + "/" + Integer.toString(msg.getChunkNo()));
-        
-        if (file.exists()) return;
-        try {
-            FileOutputStream f = new FileOutputStream(file);
-            f.write(msg.getBody());
-            f.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+
     
     @Override
     public String toString() {

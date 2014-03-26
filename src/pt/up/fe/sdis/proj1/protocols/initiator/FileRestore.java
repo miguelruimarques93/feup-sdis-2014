@@ -14,6 +14,7 @@ import java.util.Comparator;
 import pt.up.fe.sdis.proj1.Chunk;
 import pt.up.fe.sdis.proj1.utils.BackupSystem;
 import pt.up.fe.sdis.proj1.utils.FileID;
+import pt.up.fe.sdis.proj1.utils.FileSystemUtils;
 import pt.up.fe.sdis.proj1.utils.Pair;
 import rx.Observable;
 import rx.Observer;
@@ -59,6 +60,8 @@ public class FileRestore implements Observer<Object> {
 		validateChunks(fileListing);
 		//create destination file and append all chunks to it
 		writeChunksToFile(fileListing);
+		
+		FileSystemUtils.deleteFile(dir);
 	}
 
 	private File[] getSortedChunks(File dir) {

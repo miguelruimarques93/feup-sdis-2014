@@ -27,7 +27,7 @@ public class PeerChunkBackup extends AbstractProtocol {
     protected void ProcessMessage(final Message msg) {
         System.out.println("Received : " + msg.getChunkNo());
 
-        MyFile.WriteChunk(msg);
+        _bs.writeChunk(msg);
 
         _bs.Files.addChunk(msg.getFileID(), msg.getChunkNo(), msg.getReplicationDeg());
 

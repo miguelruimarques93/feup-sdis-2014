@@ -8,23 +8,30 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import pt.up.fe.sdis.proj1.protocols.peers.*;
+import pt.up.fe.sdis.proj1.messages.Message;
+import pt.up.fe.sdis.proj1.protocols.peers.PeerChunkBackup;
+import pt.up.fe.sdis.proj1.protocols.peers.PeerChunkRestore;
+import pt.up.fe.sdis.proj1.protocols.peers.PeerFileDeletion;
+import pt.up.fe.sdis.proj1.protocols.peers.PeerSpaceReclaiming;
+import pt.up.fe.sdis.proj1.protocols.peers.PeerStored;
 
 import com.almworks.sqlite4java.SQLiteConnection;
 import com.almworks.sqlite4java.SQLiteException;
 import com.almworks.sqlite4java.SQLiteJob;
 import com.almworks.sqlite4java.SQLiteQueue;
 import com.almworks.sqlite4java.SQLiteStatement;
+import com.sun.istack.internal.NotNull;
 
 public class BackupSystem {
     public BackupSystem(Pair<String, Integer> mc, Pair<String, Integer> mdb, Pair<String, Integer> mdr, InetAddress myAddr) throws IOException {
         this(mc, mdb, mdr, myAddr.toString().substring(1));
     }
-    
+
     public BackupSystem(Pair<String, Integer> mc, Pair<String, Integer> mdb, Pair<String, Integer> mdr, String myAddr) throws IOException {
         Comm = new Communicator(mc, mdb, mdr, myAddr);
         Files = new Files(new File("database.db"));
         initializePeerProtocols();
+        _usedSpace = FileSystemUtils.fileSize(new File("backups"));
     }
 
     public void shutdown() {
@@ -352,7 +359,7 @@ public class BackupSystem {
                     }
                 });
             } catch (SQLiteException e) {
-                
+
             }
         }
 
@@ -510,7 +517,7 @@ public class BackupSystem {
         _spaceReclaiming = new PeerSpaceReclaiming(this);
         _stored = new PeerStored(this);
     }
-    
+
     private void shutdownPeerProtocols() {
         _chunkBackup.finish();
         _chunkRestore.finish();
@@ -518,10 +525,40 @@ public class BackupSystem {
         _spaceReclaiming.finish();
         _stored.finish();
     }
-    
+
+    public void writeChunk(Message msg) {
+        String filePath = (msg.type == Message.Type.PUTCHUNK ? "backups/" : "restores/") + msg.getHexFileID() + "/" + msg.getChunkNo().toString();
+        long writtenSize = FileSystemUtils.WriteByteArray(filePath, msg.getBody());
+        _usedSpace += writtenSize;
+    }
+
+    public long getUsedSpace() {
+        return _usedSpace;
+    }
+
+    public void deleteChunk(FileID fileId, @NotNull Integer chunkNo) {
+        String filePath = "backups/" + fileId.toString() + "/" + chunkNo.toString();
+        File file = new File(filePath);
+        long fileSize = FileSystemUtils.fileSize(file);
+        FileSystemUtils.deleteFile(file);
+        Files.removeChunk(fileId, chunkNo);
+        _usedSpace -= fileSize;
+    }
+
+    public void deleteFile(FileID fileId) {
+        String dirPath = "backups/" + fileId.toString();
+        File dir = new File(dirPath);
+        long dirSize = FileSystemUtils.fileSize(dir);
+        FileSystemUtils.deleteFile(dir);
+        Files.removeFile(fileId);
+        _usedSpace -= dirSize;
+    }
+
     private PeerChunkBackup _chunkBackup;
     private PeerChunkRestore _chunkRestore;
     private PeerFileDeletion _fileDeletion;
     private PeerSpaceReclaiming _spaceReclaiming;
     private PeerStored _stored;
+    private long _usedSpace;
+
 }
