@@ -3,7 +3,9 @@ package pt.up.fe.sdis.proj1.utils;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -12,6 +14,7 @@ import java.util.logging.Logger;
 
 import pt.up.fe.sdis.proj1.messages.Message;
 import pt.up.fe.sdis.proj1.protocols.initiator.FileBackup;
+import pt.up.fe.sdis.proj1.protocols.initiator.FileRestore;
 import pt.up.fe.sdis.proj1.protocols.peers.PeerChunkBackup;
 import pt.up.fe.sdis.proj1.protocols.peers.PeerChunkRestore;
 import pt.up.fe.sdis.proj1.protocols.peers.PeerFileDeletion;
@@ -378,7 +381,9 @@ public class BackupSystem {
                 ownfileSt = db.prepare("SELECT filePath, fileId, numberChunks FROM OwnFile");
                 while (ownfileSt.step()) {
                     String filePath = ownfileSt.columnString(0);
+                    System.err.println(ownfileSt.columnString(1));
                     FileID fileId = new FileID(ownfileSt.columnString(1));
+                    System.err.println(fileId);
                     Integer numberChunks = ownfileSt.columnInt(2);
                     _ownFiles.put(filePath, Pair.make_pair(fileId, numberChunks));
                 }
@@ -712,6 +717,12 @@ public class BackupSystem {
         
         private BackupFileListener fileListener;
 
+        public List<String> getOwnFilePaths() {
+            List<String> result = new ArrayList<String>();
+            result.addAll(_ownFiles.keySet());
+            return result;
+        }
+        
         private ConcurrentHashMap<String, Pair<FileID, Integer>> _ownFiles = new ConcurrentHashMap<String, Pair<FileID, Integer>>();
         
         /*
@@ -768,9 +779,13 @@ public class BackupSystem {
         }
     }
     
-
-    
-    
+    public FileRestore restoreFile(String filepath, String destpath) {
+        try {
+            return new FileRestore(this, filepath, destpath);
+        } catch (IOException e) {
+            return null;
+        }
+    }
 
     public long getUsedSpace() {
         return _usedSpace;

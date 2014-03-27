@@ -29,7 +29,7 @@ public class ChunkRestore extends AbstractProtocol {
             @Override
             public void call(Inner t1) {
                 finish();
-                _sub.onError(new Error("Timeout"));
+                _sub.onError(new Error("Timeout: " + fileID + " " + chunkNo));
             }
         }, 5, TimeUnit.SECONDS);
     }

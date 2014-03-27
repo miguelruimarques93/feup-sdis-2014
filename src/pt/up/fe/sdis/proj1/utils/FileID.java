@@ -45,7 +45,7 @@ public class FileID {
             } else {
 
                 StringBuilder sb = new StringBuilder();
-                for (int i = _fileID.length - 1; i >= 0; --i)
+                for (int i = 0; i < _fileID.length; ++i)
                     sb.append(String.format("%02X", _fileID[i]));
                 _hexFileID = sb.toString();
             }

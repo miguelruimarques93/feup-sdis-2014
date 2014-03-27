@@ -27,6 +27,7 @@ public class PeerChunkRestore extends AbstractProtocol {
 
 	@Override
 	protected void ProcessMessage(final Message msg) {
+	    System.out.println("Received GETCHUNK " + msg.getFileID() + " " + msg.getChunkNo());
 		if (_bs.Files.containsChunk(msg.getFileID(), msg.getChunkNo())) {
 			final CounterObserver replyCounter = new CounterObserver();
 			

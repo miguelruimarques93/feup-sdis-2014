@@ -39,8 +39,9 @@ public class FileBackup implements Observer<Object> {
     public void Send() {
         try {
             _numChunks = _file.getNumberOfChunks();
-            _numChunksToBeSent = _numChunks;
-            for (int i = 0; i < Math.min(10, _numChunks); ++i, --_numChunksToBeSent) {
+            int numChunksInitiallySent = Math.min(10, _numChunks);
+            _numChunksToBeSent = _numChunks - numChunksInitiallySent;
+            for (int i = 0; i < numChunksInitiallySent; ++i) {
                 byte[] chunkArray = _file.getChunk(i);
                 Chunk chunk = new Chunk(i, _replicationDegree, _file.getFileId(), chunkArray);
                 new ChunkBackup(_bs, chunk).getObservable().subscribe(this);
@@ -58,7 +59,12 @@ public class FileBackup implements Observer<Object> {
         if (_numChunks == _numChunksSent) 
             ps.onCompleted();
         else if (_numChunksToBeSent > 0) {
-            int i = _numChunks - _numChunksToBeSent;
+            int i;
+            synchronized (_numChunksToBeSent) {
+                i = _numChunks - _numChunksToBeSent;
+                --_numChunksToBeSent;
+            }
+            
             try {
                 byte[] chunkArray;
                 chunkArray = _file.getChunk(i);
@@ -68,7 +74,6 @@ public class FileBackup implements Observer<Object> {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
-            --_numChunksToBeSent;
         }
     }
 
@@ -84,7 +89,7 @@ public class FileBackup implements Observer<Object> {
     public Observable<Double> getProgressionObservable() { return ps.asObservable(); }
     
     private int _numChunks;
-    private int _numChunksToBeSent;
+    private Integer _numChunksToBeSent;
     private int _numChunksSent = 0;
     private BackupSystem _bs;
     private MyFile _file;

@@ -23,6 +23,7 @@ import rx.subjects.PublishSubject;
 public class FileRestore implements Observer<Object> {
 
 	public FileRestore(BackupSystem bs, String filePath, String destPath) throws FileNotFoundException{
+	    _bs = bs;
 	    Pair<FileID, Integer> fileInfo = _bs.Files.getOwnFileInfo(filePath);
 	    
 	    if (fileInfo == null) 
@@ -31,11 +32,12 @@ public class FileRestore implements Observer<Object> {
 		_fileId = fileInfo.first;
 		_destPath = destPath;
 		_numChunks = fileInfo.second;
-		_bs = bs;
 	}
 
 	public void Restore() {	    
-        for (int i = 0; i < _numChunks; ++i) {
+	    int numChunksInitiallyReceived = /*_numChunks*/Math.min(10, _numChunks);
+	    _numChunksToBeReceived = _numChunks - numChunksInitiallyReceived;
+        for (int i = 0; i < numChunksInitiallyReceived; ++i) {
             new ChunkRestore(_bs, _fileId, i).getObservable().subscribe(this);
         }
     }
@@ -130,6 +132,14 @@ public class FileRestore implements Observer<Object> {
 	    
 	    if (_numChunks == _numChunksReceived)
 	        try { restoreFile(); ps.onCompleted(); } catch (IOException e) { ps.onError(e);}
+	    else if (_numChunksToBeReceived > 0) {
+	        int i;
+            synchronized (_numChunksToBeReceived) {
+                i = _numChunks - _numChunksToBeReceived;
+                --_numChunksToBeReceived;
+            }
+            new ChunkRestore(_bs, _fileId, i).getObservable().subscribe(this);
+	    }
     }
 
     @Override
@@ -140,13 +150,14 @@ public class FileRestore implements Observer<Object> {
     @Override
     public void onNext(Object t) { }
     
-    public Observable<Double> getObservable() { return ps.asObservable(); }
+    public Observable<Double> getProgressionObservable() { return ps.asObservable(); }
     
     private BackupSystem _bs;
     private FileID _fileId;
     private String _destPath;
     private int _numChunks;
     private int _numChunksReceived = 0;
+    private Integer _numChunksToBeReceived;
     
     private PublishSubject<Double> ps = PublishSubject.create();
 }

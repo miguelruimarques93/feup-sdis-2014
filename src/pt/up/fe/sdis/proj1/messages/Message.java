@@ -98,7 +98,11 @@ public class Message {
 
         if (fileID != null) {
             sb.append(' ');
-            sb.append(fileID.toString());
+            String fileIdStr = fileID.toString();
+            String[] fileIdSplitted = fileIdStr.split("(?<=\\G.{2})");
+            for (int i = fileIdSplitted.length - 1; i >= 0; --i) {
+                sb.append(fileIdSplitted[i]);
+            }
         }
 
         if (chunkNo != null)

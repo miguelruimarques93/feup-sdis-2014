@@ -8,12 +8,14 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
 import pt.up.fe.sdis.proj1.protocols.initiator.FileBackup;
+import pt.up.fe.sdis.proj1.protocols.initiator.FileRestore;
 import pt.up.fe.sdis.proj1.utils.BackupSystem;
 import pt.up.fe.sdis.proj1.utils.Pair;
 import rx.Observer;
@@ -38,7 +40,14 @@ import java.awt.FlowLayout;
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
+
 import net.miginfocom.swing.MigLayout;
+
+import javax.swing.JPopupMenu;
+
+import java.awt.Component;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 public class MainFrame extends JFrame {
 
@@ -156,6 +165,63 @@ public class MainFrame extends JFrame {
         list.setVisibleRowCount(34);
         list.setMinimumSize(new Dimension(100, 150));
         
+        JPopupMenu popupMenu = new JPopupMenu();
+        addPopup(list, popupMenu);
+        
+        JMenuItem mntmRestore = new JMenuItem("Restore");
+        mntmRestore.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent arg0) {
+                String filePath = list.getSelectedValue();
+                if (filePath == null) return;
+                
+                File oldFile = new File(filePath);
+                String fileName = oldFile.getName();
+                
+                JFileChooser fc = new JFileChooser();
+                fc.setFileSelectionMode( JFileChooser.DIRECTORIES_ONLY);
+                int returnVal = fc.showOpenDialog(MainFrame.this);
+                if (returnVal == JFileChooser.APPROVE_OPTION) {
+                    File dir = fc.getSelectedFile();
+                    
+                    EventQueue.invokeLater(new Runnable() {
+                        public void run() {
+                            progressBar.setValue(0);
+                        }
+                    });
+                    
+                    FileRestore r = _backupSystem.restoreFile(oldFile.getAbsolutePath(), dir.getAbsolutePath() + "/" + fileName);
+                    
+                    final Date start = new Date();
+                    
+                    r.getProgressionObservable().observeOn(Schedulers.newThread()).subscribe(new Observer<Double>() {
+                        
+                        @Override
+                        public void onCompleted() {
+                            System.out.println("Completed in " + (new Date().getTime() - start.getTime()) + " ms");
+                        }
+
+                        @Override
+                        public void onError(Throwable e) {
+                            e.printStackTrace();
+                        }
+
+                        @Override
+                        public void onNext(final Double t) {
+                            EventQueue.invokeLater(new Runnable() {
+                                public void run() {
+                                    progressBar.setValue((int)(t * 100.0));
+                                }
+                            });
+                        }
+                    });
+                    
+                    r.Restore();
+                }
+                
+            }
+        });
+        popupMenu.add(mntmRestore);
+        
         progressBar = new JProgressBar(0, 100);
         panel.add(progressBar, "cell 0 1,growx,aligny center");
         
@@ -180,6 +246,10 @@ public class MainFrame extends JFrame {
                     list.setModel(listModel);
                 }
             });
+            
+            List<String> ownFiles = _backupSystem.Files.getOwnFilePaths();
+            for (String str : ownFiles) 
+                listModel.addElement(str);
         }
     }
 
@@ -187,5 +257,22 @@ public class MainFrame extends JFrame {
     public void dispose() {
         if (_backupSystem != null) _backupSystem.shutdown();
         super.dispose();
+    }
+    private static void addPopup(Component component, final JPopupMenu popup) {
+        component.addMouseListener(new MouseAdapter() {
+        	public void mousePressed(MouseEvent e) {
+        		if (e.isPopupTrigger()) {
+        			showMenu(e);
+        		}
+        	}
+        	public void mouseReleased(MouseEvent e) {
+        		if (e.isPopupTrigger()) {
+        			showMenu(e);
+        		}
+        	}
+        	private void showMenu(MouseEvent e) {
+        		popup.show(e.getComponent(), e.getX(), e.getY());
+        	}
+        });
     }
 }
