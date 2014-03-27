@@ -35,7 +35,7 @@ public class FileRestore implements Observer<Object> {
 	}
 
 	public void Restore() {	    
-	    int numChunksInitiallyReceived = /*_numChunks*/Math.min(10, _numChunks);
+	    int numChunksInitiallyReceived = /*_numChunks*/Math.min(1, _numChunks);
 	    _numChunksToBeReceived = _numChunks - numChunksInitiallyReceived;
         for (int i = 0; i < numChunksInitiallyReceived; ++i) {
             new ChunkRestore(_bs, _fileId, i).getObservable().subscribe(this);

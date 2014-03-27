@@ -21,17 +21,30 @@ public class ChunkRestore extends AbstractProtocol {
         
         _bs = bs;
 
-        Message msg = Message.makeGetChunk(fileID.toArray(), chunkNo);
+        final Message msg = Message.makeGetChunk(fileID.toArray(), chunkNo);
         bs.Comm.MC.Sender.Send(msg);
         start(new MessageFilter(Message.Type.CHUNK, fileID, chunkNo));
         
         Schedulers.io().schedule(new Action1<Scheduler.Inner>(){
+            int NumTimes = 0;
+            int Time = 2;
+            
             @Override
             public void call(Inner t1) {
-                finish();
-                _sub.onError(new Error("Timeout: " + fileID + " " + chunkNo));
+                NumTimes++;
+                
+                if (!isFinished()) {
+                    if (NumTimes >= 3) {
+                        finish();
+                        _sub.onError(new Error("Timeout: " + fileID + " " + chunkNo));
+                    } else {
+                        Time += 2;
+                        bs.Comm.MC.Sender.Send(msg);
+                        t1.schedule(this, Time, TimeUnit.SECONDS);
+                    }
+                }
             }
-        }, 5, TimeUnit.SECONDS);
+        }, 2, TimeUnit.SECONDS);
     }
 
     @Override

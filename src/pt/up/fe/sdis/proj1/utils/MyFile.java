@@ -3,6 +3,7 @@ package pt.up.fe.sdis.proj1.utils;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
@@ -59,28 +60,34 @@ public class MyFile {
     public byte[] getChunk(int chunkNo) throws IOException {
         long chunkPos = chunkNo * Chunk.MAX_CHUNK_SIZE;
         long arrSize = Math.min(Chunk.MAX_CHUNK_SIZE, _fileSize - chunkPos);
-        if (chunkPos > _fileSize) {
-            if (raf != null) {
-                raf.close();
-                raf = null;
-            }
+        if (chunkPos > _fileSize || raf == null) {
             return new byte[0];
         }
         
-        if (raf == null) 
-            raf = new RandomAccessFile(_file, "r");
+        byte[] result = new byte[(int) arrSize];;
+        synchronized (raf) {
+            raf.seek(chunkPos);
+            raf.read(result);
+        }
         
-        raf.seek(chunkPos);
-        byte[] result = new byte[(int) arrSize];
-        raf.read(result);
-        
-        return result;
+        return result == null ? new byte[0] : result;
+    }
+    
+    public void open() throws FileNotFoundException {
+        if (raf == null) raf = new RandomAccessFile(_file, "r");
+    }
+    
+    public void close() {
+        if (raf != null) {
+            try { raf.close(); } catch (IOException e) { }
+            raf = null;
+        }
     }
     
     public static byte[] ReadChunk(FileID fileId, Integer chunkNo) throws IOException {
     	File f = new File("backups/" + fileId.toString() + "/" + chunkNo.toString());
     	if (!f.exists()) 
-    		return null;
+    		throw new FileNotFoundException("");
     	
 		BufferedInputStream bis = new BufferedInputStream(new FileInputStream(f));
 		byte[] chunk = new byte[(int)f.length()];

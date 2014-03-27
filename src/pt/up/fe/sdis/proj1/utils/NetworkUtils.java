@@ -1,5 +1,11 @@
 package pt.up.fe.sdis.proj1.utils;
 
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.regex.Pattern;
 
 public class NetworkUtils {
@@ -32,5 +38,27 @@ public class NetworkUtils {
     
     public static boolean isValidPort(int port) {
         return port >= 0 && port <= 65535;
+    }
+
+    public static InetAddress[] getPossibleInterfaces() {
+        try {
+            ArrayList<InetAddress> result = new ArrayList<InetAddress>();
+            for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
+                NetworkInterface intf = en.nextElement();
+                if (intf.supportsMulticast())
+                    for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements();) {
+                        InetAddress ipAddr = enumIpAddr.nextElement();
+                        if (!ipAddr.isLoopbackAddress() && ipAddr instanceof Inet4Address) {
+                            result.add(ipAddr);
+                        }
+                    }
+            }
+
+            InetAddress[] resultArray = new InetAddress[result.size()];
+            result.toArray(resultArray);
+            return resultArray;
+        } catch (SocketException e) {
+            return null;
+        }
     }
 }

@@ -23,7 +23,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
-import javax.swing.UIManager;
 
 import pt.up.fe.sdis.proj1.gui.utils.IpVerifier;
 import pt.up.fe.sdis.proj1.gui.utils.PortVerifier;
@@ -62,34 +61,12 @@ public class ConfigWindow {
         initialize();
     }
 
-    private InetAddress[] getPossibleInterfaces() {
-        try {
-            ArrayList<InetAddress> result = new ArrayList<InetAddress>();
-            for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
-                NetworkInterface intf = en.nextElement();
-                if (intf.supportsMulticast())
-                    for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements();) {
-                        InetAddress ipAddr = enumIpAddr.nextElement();
-                        if (!ipAddr.isLoopbackAddress() && ipAddr instanceof Inet4Address) {
-                            result.add(ipAddr);
-                        }
-                    }
-            }
-
-            InetAddress[] resultArray = new InetAddress[result.size()];
-            result.toArray(resultArray);
-            return resultArray;
-        } catch (SocketException e) {
-            return null;
-        }
-    }
-
     private FlowLayout _fl_panel = new FlowLayout(FlowLayout.CENTER, 5, 5);
     private JPanel _panel = new JPanel();
     private JPanel _panelMain = new JPanel();
     private GridBagLayout _gbl__panelMain = new GridBagLayout();
     private JLabel _lblNetworkInterface = new JLabel("Network Interface:");
-    private JComboBox _cmbNetworkInterface;
+    private JComboBox<InetAddress> _cmbNetworkInterface;
     private final JLabel lblInvalidMC = new JLabel("Invalid IP/Port");
     private JTextField txt_mdb_port;
     private JTextField txt_mdr_port;
@@ -109,7 +86,7 @@ public class ConfigWindow {
         frame.getContentPane().setLayout(new BorderLayout(0, 0));
         frame.setLocationRelativeTo(null);
         
-        InetAddress[] comboBoxElements = getPossibleInterfaces();
+        InetAddress[] comboBoxElements = NetworkUtils.getPossibleInterfaces();
 
         
         frame.getContentPane().add(_panel, BorderLayout.CENTER);
@@ -125,7 +102,7 @@ public class ConfigWindow {
         _gbl__panelMain.rowWeights = new double[]{0.0, 0.0, 1.0, 0.0};
         _panelMain.setLayout(_gbl__panelMain);
         
-        _cmbNetworkInterface = new JComboBox(comboBoxElements);
+        _cmbNetworkInterface = new JComboBox<InetAddress>(comboBoxElements);
         _lblNetworkInterface.setLabelFor(_cmbNetworkInterface);
         
                 

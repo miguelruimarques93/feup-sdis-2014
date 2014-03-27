@@ -39,9 +39,11 @@ public class FileBackup implements Observer<Object> {
     public void Send() {
         try {
             _numChunks = _file.getNumberOfChunks();
-            int numChunksInitiallySent = Math.min(10, _numChunks);
+            int numChunksInitiallySent = Math.min(1, _numChunks);
             _numChunksToBeSent = _numChunks - numChunksInitiallySent;
+            _file.open();
             for (int i = 0; i < numChunksInitiallySent; ++i) {
+                System.out.println("Sending chunk " + i);
                 byte[] chunkArray = _file.getChunk(i);
                 Chunk chunk = new Chunk(i, _replicationDegree, _file.getFileId(), chunkArray);
                 new ChunkBackup(_bs, chunk).getObservable().subscribe(this);
@@ -56,8 +58,10 @@ public class FileBackup implements Observer<Object> {
     public void onCompleted() {
         _numChunksSent++;
         ps.onNext(_numChunksSent / (double)_numChunks);
-        if (_numChunks == _numChunksSent) 
+        if (_numChunks == _numChunksSent) {
             ps.onCompleted();
+            _file.close();
+        }
         else if (_numChunksToBeSent > 0) {
             int i;
             synchronized (_numChunksToBeSent) {
@@ -69,6 +73,7 @@ public class FileBackup implements Observer<Object> {
                 byte[] chunkArray;
                 chunkArray = _file.getChunk(i);
                 Chunk chunk = new Chunk(i, _replicationDegree, _file.getFileId(), chunkArray);
+                System.out.println("Sending chunk " + i);
                 new ChunkBackup(_bs, chunk).getObservable().subscribe(this);
             } catch (IOException e) {
                 // TODO Auto-generated catch block

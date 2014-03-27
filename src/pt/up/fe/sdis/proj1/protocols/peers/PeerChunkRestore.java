@@ -1,5 +1,6 @@
 package pt.up.fe.sdis.proj1.protocols.peers;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -30,20 +31,19 @@ public class PeerChunkRestore extends AbstractProtocol {
 	    System.out.println("Received GETCHUNK " + msg.getFileID() + " " + msg.getChunkNo());
 		if (_bs.Files.containsChunk(msg.getFileID(), msg.getChunkNo())) {
 			final CounterObserver replyCounter = new CounterObserver();
-			
-			byte[] chunkArray;
-			
+			byte[] chunkArray = null;
 			try {
 				chunkArray = MyFile.ReadChunk(msg.getFileID(), msg.getChunkNo());
+			} catch (FileNotFoundException e) {
+	             System.err.println("File not found " + msg.getFileID() + " " + msg.getChunkNo());
+			    _bs.Files.removeChunk(msg.getFileID(), msg.getChunkNo());
 			} catch (IOException e) {
-				return;
 			}
+			if (chunkArray == null) return;
 			
 			final Chunk chunk = new Chunk(msg.getChunkNo(), msg.getFileID(), chunkArray);
-			
 			final Subscription sub = _bs.Comm.MDR.Publisher.getObservable()
 					.filter(new MessageFilter(Message.Type.CHUNK, msg.getFileID(), msg.getChunkNo())).subscribe(replyCounter);
-			
 			
 	        Schedulers.io().schedule(new Action1<Scheduler.Inner>() {
 	            @Override

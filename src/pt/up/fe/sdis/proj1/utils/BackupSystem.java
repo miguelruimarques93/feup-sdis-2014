@@ -1,18 +1,23 @@
 package pt.up.fe.sdis.proj1.utils;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import pt.up.fe.sdis.proj1.Chunk;
 import pt.up.fe.sdis.proj1.messages.Message;
+import pt.up.fe.sdis.proj1.protocols.initiator.ChunkBackup;
 import pt.up.fe.sdis.proj1.protocols.initiator.FileBackup;
 import pt.up.fe.sdis.proj1.protocols.initiator.FileRestore;
 import pt.up.fe.sdis.proj1.protocols.peers.PeerChunkBackup;
@@ -20,6 +25,9 @@ import pt.up.fe.sdis.proj1.protocols.peers.PeerChunkRestore;
 import pt.up.fe.sdis.proj1.protocols.peers.PeerFileDeletion;
 import pt.up.fe.sdis.proj1.protocols.peers.PeerSpaceReclaiming;
 import pt.up.fe.sdis.proj1.protocols.peers.PeerStored;
+import rx.Scheduler;
+import rx.functions.Action1;
+import rx.schedulers.Schedulers;
 
 import com.almworks.sqlite4java.SQLiteConnection;
 import com.almworks.sqlite4java.SQLiteException;
@@ -584,7 +592,10 @@ public class BackupSystem {
 
         public void removeChunk(FileID file, Integer chunkNo) {
             if (containsChunk(file, chunkNo)) {
-                _internalMap.get(file.toString()).remove(chunkNo);
+                ConcurrentHashMap<Integer, Pair<Integer, HashSet<String>>> m = _internalMap.get(file.toString());
+                m.remove(chunkNo);
+                if (m.isEmpty()) 
+                    removeFile(file);
                 queue.execute(new ChunkRemover(file, chunkNo));
 //                try {
 //                    ChunkRemover.exec(db, file, chunkNo);
@@ -681,6 +692,29 @@ public class BackupSystem {
             return result;
         }
         
+        public PriorityQueue<ChunkInfo> getChunksWithLowRd() {
+            
+            PriorityQueue<ChunkInfo> result = new PriorityQueue<ChunkInfo>(11, new Comparator<ChunkInfo>(){
+                @Override
+                public int compare(ChunkInfo arg0, ChunkInfo arg1) {
+                    return arg0.getExcessDegree() - arg1.getExcessDegree();
+                }
+            });
+            
+            for (Map.Entry<String, ConcurrentHashMap<Integer, Pair<Integer, HashSet<String>>>> file : _internalMap.entrySet()) {
+                
+                for(Map.Entry<Integer, Pair<Integer, HashSet<String>>> chunk : file.getValue().entrySet()){
+                    Integer actualDegree = chunk.getValue().second.size();
+                    ChunkInfo info = new ChunkInfo(file.getKey(), chunk.getKey(), chunk.getValue().first, actualDegree);
+                    if (info.getExcessDegree() < 0)
+                        result.offer(info);
+                }
+                
+            }
+            
+            return result;
+        }
+        
         public static class ChunkInfo implements Comparable<ChunkInfo>{
             
             ChunkInfo(String fileId, Integer chunkNo, Integer desiredRD, Integer actualRD){
@@ -737,6 +771,24 @@ public class BackupSystem {
         _fileDeletion = new PeerFileDeletion(this);
         _spaceReclaiming = new PeerSpaceReclaiming(this);
         _stored = new PeerStored(this);
+        
+        Schedulers.newThread().schedulePeriodically(new Action1<Scheduler.Inner>() {
+            @Override
+            public void call(Scheduler.Inner t1) {
+                PriorityQueue<Files.ChunkInfo> chunks = Files.getChunksWithLowRd();
+                while(!chunks.isEmpty()) {
+                    Files.ChunkInfo info = chunks.remove();
+                    try {
+                        new ChunkBackup(BackupSystem.this, new Chunk(info._chunkNo, info._desiredRD, info._fileId, MyFile.ReadChunk(info._fileId, info._chunkNo)));
+                    } catch (FileNotFoundException e) {
+                        Files.removeChunk(info._fileId, info._chunkNo);
+                    } catch (IOException e) {
+                    }
+                }
+                
+            }            
+        }, 1, 1, TimeUnit.MINUTES);
+        
     }
 
     private void shutdownPeerProtocols() {
@@ -773,7 +825,7 @@ public class BackupSystem {
 
     public FileBackup backupFile(File file) {
         try {
-            return new FileBackup(this, new MyFile(_addr, file.getAbsolutePath()), 1);
+            return new FileBackup(this, new MyFile(_addr, file.getAbsolutePath()), 2);
         } catch (IOException e) {
             return null;
         }
@@ -800,7 +852,7 @@ public class BackupSystem {
     }
     
     public long getAvailableSpace(){
-        return _totalSpace-_usedSpace;
+        return _totalSpace - _usedSpace;
     }
     
     private PeerChunkBackup _chunkBackup;
@@ -810,6 +862,6 @@ public class BackupSystem {
     private PeerStored _stored;
     private String _addr;
     private long _usedSpace;
-    private long _totalSpace;
+    private long _totalSpace = 64000000L;
 
 }

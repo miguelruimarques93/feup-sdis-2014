@@ -192,8 +192,12 @@ public class Message {
         String[] msgParams = str.split(" ");
 
         int paramNum = 0;
-
-        Type t = Type.valueOf(msgParams[paramNum]);
+        Type t = null;
+        try {
+            t = Type.valueOf(msgParams[paramNum]);
+        } catch (Exception e) {
+            throw new IOException("Unrecognized message type.");
+        }
         Message msg = new Message(t);
 
         if (msg.type != Type.DELETE) {

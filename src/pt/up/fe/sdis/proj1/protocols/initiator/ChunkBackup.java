@@ -50,7 +50,10 @@ public class ChunkBackup extends AbstractProtocol {
 
                     if (numRepliers < chunk.replicationDeg) {
                         if (NumTimes == 5) {
-                            resultPublisher.onError(new ChunkBackupException(chunk.fileID, chunk.chunkNo));
+                            if (numRepliers == 0) {
+                                resultPublisher.onError(new ChunkBackupException(chunk.fileID, chunk.chunkNo));
+                            }
+                            
                             finish();
                         } else {
                             _repliers.clear();
@@ -72,6 +75,7 @@ public class ChunkBackup extends AbstractProtocol {
 
     @Override
     protected void ProcessMessage(Message msg) {
+        System.out.println("Received STORED: " + msg.getChunkNo());
         synchronized (_repliers) {
             _repliers.add(msg.Sender);
         }

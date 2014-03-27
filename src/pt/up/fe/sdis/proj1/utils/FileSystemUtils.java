@@ -4,8 +4,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-import pt.up.fe.sdis.proj1.messages.Message;
-
 public class FileSystemUtils {
     
     public static long fileSize(File directory) {

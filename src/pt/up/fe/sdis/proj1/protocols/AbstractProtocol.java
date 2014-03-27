@@ -24,6 +24,10 @@ public abstract class AbstractProtocol implements Observer<Message> {
         _subscription.unsubscribe();
     }
     
+    public final boolean isFinished() {
+        return _subscription.isUnsubscribed();
+    }
+    
     @Override
     public void onCompleted() { }
 
