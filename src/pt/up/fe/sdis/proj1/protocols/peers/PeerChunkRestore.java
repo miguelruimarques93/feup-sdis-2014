@@ -37,6 +37,8 @@ public class PeerChunkRestore extends AbstractProtocol {
 			} catch (FileNotFoundException e) {
 	             System.err.println("File not found " + msg.getFileID() + " " + msg.getChunkNo());
 			    _bs.Files.removeChunk(msg.getFileID(), msg.getChunkNo());
+		        Message msg1 = Message.makeRemoved(msg.getFileID().toArray(), msg.getChunkNo());
+		        _bs.Comm.MC.Sender.Send(msg1);
 			} catch (IOException e) {
 			}
 			if (chunkArray == null) return;

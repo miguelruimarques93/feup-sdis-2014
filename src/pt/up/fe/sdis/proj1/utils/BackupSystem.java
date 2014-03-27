@@ -782,6 +782,8 @@ public class BackupSystem {
                         new ChunkBackup(BackupSystem.this, new Chunk(info._chunkNo, info._desiredRD, info._fileId, MyFile.ReadChunk(info._fileId, info._chunkNo)));
                     } catch (FileNotFoundException e) {
                         Files.removeChunk(info._fileId, info._chunkNo);
+                        Message msg1 = Message.makeRemoved(info._fileId.toArray(), info._chunkNo);
+                        Comm.MC.Sender.Send(msg1);
                     } catch (IOException e) {
                     }
                 }

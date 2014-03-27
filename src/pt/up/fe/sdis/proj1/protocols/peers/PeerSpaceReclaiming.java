@@ -28,6 +28,7 @@ public class PeerSpaceReclaiming extends AbstractProtocol {
 
 	@Override
 	protected void ProcessMessage(Message msg) {
+	    System.err.println("Received REMOVED: " + msg.getFileID() + " " + msg.getChunkNo());
 		if(_bs.Files.containsPeer(msg.getFileID(), msg.getChunkNo(), msg.Sender.toString())){
 			_bs.Files.removePeer(msg.getFileID(), msg.getChunkNo(), msg.Sender.toString());
 			int realDegree = _bs.Files.getChunkRealReplicationDegree(msg.getFileID(), msg.getChunkNo());
