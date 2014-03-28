@@ -2,9 +2,9 @@ package pt.up.fe.sdis.proj1.protocols.initiator;
 
 import java.util.concurrent.TimeUnit;
 
+import pt.up.fe.sdis.proj1.BackupSystem;
 import pt.up.fe.sdis.proj1.messages.Message;
 import pt.up.fe.sdis.proj1.protocols.AbstractProtocol;
-import pt.up.fe.sdis.proj1.utils.BackupSystem;
 import pt.up.fe.sdis.proj1.utils.FileID;
 import pt.up.fe.sdis.proj1.utils.MessageFilter;
 import rx.Observable;

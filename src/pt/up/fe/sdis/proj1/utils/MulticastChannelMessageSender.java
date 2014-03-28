@@ -6,6 +6,7 @@ import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.util.logging.Level;
 
+import pt.up.fe.sdis.proj1.BackupSystem;
 import pt.up.fe.sdis.proj1.messages.Message;
 
 public class MulticastChannelMessageSender {

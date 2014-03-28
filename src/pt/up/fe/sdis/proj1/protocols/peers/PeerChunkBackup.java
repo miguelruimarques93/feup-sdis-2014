@@ -3,10 +3,10 @@ package pt.up.fe.sdis.proj1.protocols.peers;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
+import pt.up.fe.sdis.proj1.BackupSystem;
 import pt.up.fe.sdis.proj1.messages.Message;
 import pt.up.fe.sdis.proj1.protocols.AbstractProtocol;
 import pt.up.fe.sdis.proj1.protocols.initiator.SpaceReclaiming;
-import pt.up.fe.sdis.proj1.utils.BackupSystem;
 import pt.up.fe.sdis.proj1.utils.Communicator;
 import pt.up.fe.sdis.proj1.utils.MessageFilter;
 import rx.Scheduler;

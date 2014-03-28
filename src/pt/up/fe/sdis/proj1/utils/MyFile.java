@@ -1,8 +1,5 @@
 package pt.up.fe.sdis.proj1.utils;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -35,7 +32,7 @@ public class MyFile {
 
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            String text = _ownerIP + _absolutePath + _lastModifiedTime.toString()/* + new Date().getTime();*/;
+            String text = _ownerIP + _absolutePath + _lastModifiedTime.toString() + new Date().getTime();
             _fileId = new FileID(digest.digest(text.getBytes(StandardCharsets.UTF_8)));
         } catch (NoSuchAlgorithmException e) {
             _fileId = null;
@@ -83,20 +80,6 @@ public class MyFile {
             try { raf.close(); } catch (IOException e) { }
             raf = null;
         }
-    }
-    
-    public static byte[] ReadChunk(FileID fileId, Integer chunkNo) throws IOException {
-    	File f = new File("backups/" + fileId.toString() + "/" + chunkNo.toString());
-    	if (!f.exists()) 
-    		throw new FileNotFoundException("");
-    	
-		BufferedInputStream bis = new BufferedInputStream(new FileInputStream(f));
-		byte[] chunk = new byte[(int)f.length()];
-		
-		bis.read(chunk);    	
-    	
-		bis.close();
-    	return chunk;
     }
 
     @Override

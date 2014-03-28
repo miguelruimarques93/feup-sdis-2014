@@ -5,21 +5,22 @@ import pt.up.fe.sdis.proj1.messages.Message;
 import pt.up.fe.sdis.proj1.protocols.AbstractProtocol;
 import pt.up.fe.sdis.proj1.utils.MessageFilter;
 
-public class PeerStored extends AbstractProtocol {
+public class PeerIsDeletedProtocol extends AbstractProtocol {
 
-    public PeerStored(BackupSystem bs) {
+    public PeerIsDeletedProtocol(BackupSystem bs) {
         super(bs.Comm.MC.Publisher);
-
         _bs = bs;
-        
-        start(new MessageFilter(Message.Type.STORED));
+        start(new MessageFilter(Message.Type.ISDELETED));
     }
 
     @Override
     protected void ProcessMessage(Message msg) {
-        if (_bs.Files.containsChunk(msg.getFileID(), msg.getChunkNo())) {
-            _bs.Files.addPeer(msg.getFileID(), msg.getChunkNo(), msg.Sender.toString());
+        System.out.println("Here");
+        if (_bs.Files.containsDeletedFile(msg.getFileID())) {
+            System.out.println("Here1");
+            _bs.Comm.MC.Sender.Send(Message.makeDelete(msg.getFileID()));
         }
+
     }
     
     private BackupSystem _bs;

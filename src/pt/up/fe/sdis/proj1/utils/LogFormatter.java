@@ -13,6 +13,6 @@ public class LogFormatter extends Formatter {
         return _dateFormat.format(new Date(arg0.getMillis())) + " - " + arg0.getMessage();
     }
     
-    private SimpleDateFormat _dateFormat =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS");
+    private static SimpleDateFormat _dateFormat =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS");
 
 }

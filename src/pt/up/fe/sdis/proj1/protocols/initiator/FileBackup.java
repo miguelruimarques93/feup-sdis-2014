@@ -1,22 +1,30 @@
 package pt.up.fe.sdis.proj1.protocols.initiator;
 
 import java.io.IOException;
+import java.nio.file.FileAlreadyExistsException;
 
+import pt.up.fe.sdis.proj1.BackupSystem;
 import pt.up.fe.sdis.proj1.Chunk;
-import pt.up.fe.sdis.proj1.utils.BackupSystem;
+import pt.up.fe.sdis.proj1.FileVersion;
 import pt.up.fe.sdis.proj1.utils.MyFile;
 import rx.Observable;
 import rx.Observer;
 import rx.subjects.PublishSubject;
 
 public class FileBackup implements Observer<Object> {
-    public FileBackup(final BackupSystem bs, final MyFile file, int replicationDegree) {
+    public FileBackup(final BackupSystem bs, final MyFile file, int replicationDegree) throws FileAlreadyExistsException {
         if (replicationDegree < 1 || replicationDegree > 9)
             throw new IllegalArgumentException("Replication Degree must be between 1 and 9.");
 
         _bs = bs;
         _replicationDegree = replicationDegree;
         _file = file;
+        
+        System.out.println(new FileVersion(file.getPath(), file.getLastModifiedDate()).toString());
+        
+        if (_bs.Files.containsOwnFile(file.getPath(), file.getLastModifiedDate()))
+            throw new FileAlreadyExistsException(new FileVersion(file.getPath(), file.getLastModifiedDate()).toString());
+        
         
         ps.subscribe(new Observer<Double>() {
 
@@ -49,7 +57,7 @@ public class FileBackup implements Observer<Object> {
                 new ChunkBackup(_bs, chunk).getObservable().subscribe(this);
             }
         } catch (IOException e) {
-            new FileDeletion(_bs, _file);
+            new FileDeletion(_bs, _file.getPath(), _file.getLastModifiedDate());
             ps.onError(e);
         }
     }
@@ -84,7 +92,7 @@ public class FileBackup implements Observer<Object> {
 
     @Override
     public void onError(Throwable e) {
-        new FileDeletion(_bs, _file);
+        new FileDeletion(_bs, _file.getPath(), _file.getLastModifiedDate());
         ps.onError(e);
     }
 

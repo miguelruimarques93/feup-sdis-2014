@@ -33,9 +33,11 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.text.DefaultCaret;
 
 import net.miginfocom.swing.MigLayout;
+import pt.up.fe.sdis.proj1.BackupSystem;
+import pt.up.fe.sdis.proj1.FileVersion;
+import pt.up.fe.sdis.proj1.gui.utils.GuiUtils;
 import pt.up.fe.sdis.proj1.protocols.initiator.FileBackup;
 import pt.up.fe.sdis.proj1.protocols.initiator.FileRestore;
-import pt.up.fe.sdis.proj1.utils.BackupSystem;
 import pt.up.fe.sdis.proj1.utils.LogFormatter;
 import pt.up.fe.sdis.proj1.utils.Pair;
 import rx.Observer;
@@ -47,8 +49,8 @@ public class MainFrame extends JFrame {
 
     private JPanel contentPane;
     private BackupSystem _backupSystem = null;
-    private JList<String> list;
-    private DefaultListModel<String> listModel;
+    private JList<FileVersion> list;
+    private DefaultListModel<FileVersion> listModel;
     private JProgressBar progressBar;
     private JTextArea textArea;
 
@@ -57,9 +59,9 @@ public class MainFrame extends JFrame {
      * 
      * @throws IOException
      */
-    public MainFrame(Pair<String, Integer> mc, Pair<String, Integer> mdb, Pair<String, Integer> mdr, InetAddress intf) throws IOException {
+    public MainFrame(Pair<String, Integer> mc, Pair<String, Integer> mdb, Pair<String, Integer> mdr, InetAddress intf, String workingDir) throws IOException {
         initializeGUI();
-        initializeBackupSystem(mc, mdb, mdr, intf);
+        initializeBackupSystem(mc, mdb, mdr, intf, workingDir);
     }
 
     protected MainFrame() {
@@ -120,6 +122,10 @@ public class MainFrame extends JFrame {
                     File file = fc.getSelectedFile();
                     FileBackup b = _backupSystem.backupFile(file);
                     
+                    if (b == null) {
+                        return;
+                    }
+                    
                     final Date start = new Date();
                     
                     b.getProgressionObservable().observeOn(Schedulers.newThread()).subscribe(new Observer<Double>() {
@@ -154,10 +160,10 @@ public class MainFrame extends JFrame {
         panel.setSize(new Dimension(0, 10));
         panel.setMinimumSize(new Dimension(100, 500));
         contentPane.add(panel, BorderLayout.SOUTH);
-        listModel = new DefaultListModel<String>();
+        listModel = new DefaultListModel<FileVersion>();
         panel.setLayout(new MigLayout("", "[100px,grow]", "[100px][14]"));
         
-        list = new JList<String>();
+        list = new JList<FileVersion>();
         list.setValueIsAdjusting(true);
         list.setModel(listModel);
         list.setPreferredSize(new Dimension(100, 100));
@@ -173,10 +179,10 @@ public class MainFrame extends JFrame {
         JMenuItem mntmRestore = new JMenuItem("Restore");
         mntmRestore.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent arg0) {
-                String filePath = list.getSelectedValue();
-                if (filePath == null) return;
+                FileVersion fileVersion = list.getSelectedValue();
+                if (fileVersion == null) return;
                 
-                File oldFile = new File(filePath);
+                File oldFile = new File(fileVersion.getFilePath());
                 String fileName = oldFile.getName();
                 
                 JFileChooser fc = new JFileChooser();
@@ -191,7 +197,7 @@ public class MainFrame extends JFrame {
                         }
                     });
                     
-                    FileRestore r = _backupSystem.restoreFile(oldFile.getAbsolutePath(), dir.getAbsolutePath() + "/" + fileName);
+                    FileRestore r = _backupSystem.restoreFile(oldFile.getAbsolutePath(), dir.getAbsolutePath() + File.separator + fileName, fileVersion.getModificationMillis());
                     
                     final Date start = new Date();
                     
@@ -226,10 +232,10 @@ public class MainFrame extends JFrame {
         JMenuItem mntmDelete = new JMenuItem("Delete");
         mntmDelete.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                String filePath = list.getSelectedValue();
-                if (filePath == null) return;
+                FileVersion fileVersion = list.getSelectedValue();
+                if (fileVersion == null) return;
                 
-                _backupSystem.deleteFile(filePath);
+                _backupSystem.deleteFile(fileVersion.getFilePath(), fileVersion.getModificationMillis());
             }
         });
         popupMenu.add(mntmDelete);
@@ -251,7 +257,7 @@ public class MainFrame extends JFrame {
         GuiUtils.setSystemLookAndFeel();
     }
 
-    public void initializeBackupSystem(Pair<String, Integer> mc, Pair<String, Integer> mdb, Pair<String, Integer> mdr, InetAddress intf) throws IOException {
+    public void initializeBackupSystem(Pair<String, Integer> mc, Pair<String, Integer> mdb, Pair<String, Integer> mdr, InetAddress intf, String workingDir) throws IOException {
         BackupSystem.Log.addHandler(new Handler() {
             private LogFormatter formatter = new LogFormatter();
             
@@ -271,27 +277,27 @@ public class MainFrame extends JFrame {
         
         
         
-        _backupSystem = new BackupSystem(mc, mdb, mdr, intf);
+        _backupSystem = new BackupSystem(mc, mdb, mdr, intf, workingDir);
         
         if (_backupSystem != null) {
             _backupSystem.Files.setFileListener(new BackupSystem.BackupFileListener() {
                 
                 @Override
-                public void FileRemoved(String filePath) {
+                public void FileVersionRemoved(FileVersion filePath) {
                     listModel.removeElement(filePath);              
                     list.setModel(listModel);
                 }
                 
                 @Override
-                public void FileAdded(String filePath) {
+                public void FileVersionAdded(FileVersion filePath) {
                     listModel.addElement(filePath);
                     list.setModel(listModel);
                 }
             });
             
-            List<String> ownFiles = _backupSystem.Files.getOwnFilePaths();
-            for (String str : ownFiles) 
-                listModel.addElement(str);
+            List<FileVersion> ownFiles = _backupSystem.Files.getOwnFileVersions();
+            for (FileVersion fileVersion : ownFiles) 
+                listModel.addElement(fileVersion);
         }
     }
 

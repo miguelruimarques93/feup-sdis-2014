@@ -5,13 +5,12 @@ import java.io.IOException;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
+import pt.up.fe.sdis.proj1.BackupSystem;
 import pt.up.fe.sdis.proj1.Chunk;
 import pt.up.fe.sdis.proj1.messages.Message;
 import pt.up.fe.sdis.proj1.protocols.AbstractProtocol;
-import pt.up.fe.sdis.proj1.utils.BackupSystem;
 import pt.up.fe.sdis.proj1.utils.CounterObserver;
 import pt.up.fe.sdis.proj1.utils.MessageFilter;
-import pt.up.fe.sdis.proj1.utils.MyFile;
 import rx.Scheduler;
 import rx.Subscription;
 import rx.functions.Action1;
@@ -33,7 +32,7 @@ public class PeerChunkRestore extends AbstractProtocol {
 			final CounterObserver replyCounter = new CounterObserver();
 			byte[] chunkArray = null;
 			try {
-				chunkArray = MyFile.ReadChunk(msg.getFileID(), msg.getChunkNo());
+				chunkArray = _bs.readChunk(msg.getFileID(), msg.getChunkNo());
 			} catch (FileNotFoundException e) {
 	             System.err.println("File not found " + msg.getFileID() + " " + msg.getChunkNo());
 			    _bs.Files.removeChunk(msg.getFileID(), msg.getChunkNo());

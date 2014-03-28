@@ -4,14 +4,13 @@ import java.io.IOException;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
+import pt.up.fe.sdis.proj1.BackupSystem;
 import pt.up.fe.sdis.proj1.Chunk;
 import pt.up.fe.sdis.proj1.messages.Message;
 import pt.up.fe.sdis.proj1.protocols.AbstractProtocol;
 import pt.up.fe.sdis.proj1.protocols.initiator.ChunkBackup;
-import pt.up.fe.sdis.proj1.utils.BackupSystem;
 import pt.up.fe.sdis.proj1.utils.CounterObserver;
 import pt.up.fe.sdis.proj1.utils.MessageFilter;
-import pt.up.fe.sdis.proj1.utils.MyFile;
 import rx.Scheduler;
 import rx.Subscription;
 import rx.functions.Action1;
@@ -39,7 +38,7 @@ public class PeerSpaceReclaiming extends AbstractProtocol {
 				
 				byte[] chunkArray;
 				try {
-					chunkArray = MyFile.ReadChunk(msg.getFileID(), msg.getChunkNo());
+					chunkArray = _bs.readChunk(msg.getFileID(), msg.getChunkNo());
 				} catch(IOException e) {
 					return;
 				}

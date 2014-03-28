@@ -6,6 +6,10 @@ import java.io.IOException;
 
 public class FileSystemUtils {
     
+    public static long fileSize(String filePath) {
+        return fileSize(new File(filePath));
+    }
+    
     public static long fileSize(File directory) {
         if (!directory.exists())
             return 0L;

@@ -12,7 +12,7 @@ import pt.up.fe.sdis.proj1.utils.FileID;
 
 public class Message {
     public enum Type {
-        PUTCHUNK, GETCHUNK, CHUNK, STORED, DELETE, REMOVED
+        PUTCHUNK, GETCHUNK, CHUNK, STORED, DELETE, REMOVED, ISDELETED
     }
 
     public final Type type;
@@ -181,6 +181,13 @@ public class Message {
         return result;
     }
 
+    public static Message makeIsDeleted(FileID fileID) {
+        Message result = new Message(Type.ISDELETED);
+        result.setVersion(2, 0);
+        result.setFileID(fileID);
+        return result;
+    }
+    
     public static Message fromByteArray(byte[] bArray) throws IOException {
         ByteArrayInputStream byteArrayStream = new ByteArrayInputStream(bArray);
         DataInputStream dis = new DataInputStream(byteArrayStream);
@@ -216,7 +223,7 @@ public class Message {
         
         msg.setFileID(tempFileID);
 
-        if (msg.type != Type.DELETE) {
+        if (msg.type != Type.DELETE && msg.type != Type.ISDELETED) {
             paramNum++;
             String chunkNoStr = msgParams[paramNum];
             msg.chunkNo = Integer.parseInt(chunkNoStr);

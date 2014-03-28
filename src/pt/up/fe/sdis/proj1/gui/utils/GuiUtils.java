@@ -1,4 +1,4 @@
-package pt.up.fe.sdis.proj1.gui;
+package pt.up.fe.sdis.proj1.gui.utils;
 
 import javax.swing.UIManager;
 

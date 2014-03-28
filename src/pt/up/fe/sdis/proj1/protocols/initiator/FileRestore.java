@@ -11,8 +11,8 @@ import java.nio.file.NoSuchFileException;
 import java.util.Arrays;
 import java.util.Comparator;
 
+import pt.up.fe.sdis.proj1.BackupSystem;
 import pt.up.fe.sdis.proj1.Chunk;
-import pt.up.fe.sdis.proj1.utils.BackupSystem;
 import pt.up.fe.sdis.proj1.utils.FileID;
 import pt.up.fe.sdis.proj1.utils.FileSystemUtils;
 import pt.up.fe.sdis.proj1.utils.Pair;
@@ -22,9 +22,9 @@ import rx.subjects.PublishSubject;
 
 public class FileRestore implements Observer<Object> {
 
-	public FileRestore(BackupSystem bs, String filePath, String destPath) throws FileNotFoundException{
+	public FileRestore(BackupSystem bs, String filePath, String destPath, Long modificationMillis) throws FileNotFoundException{
 	    _bs = bs;
-	    Pair<FileID, Integer> fileInfo = _bs.Files.getOwnFileInfo(filePath);
+	    Pair<FileID, Integer> fileInfo = _bs.Files.getOwnFileVersionInfo(filePath, modificationMillis);
 	    
 	    if (fileInfo == null) 
 	        throw new FileNotFoundException();
@@ -51,7 +51,7 @@ public class FileRestore implements Observer<Object> {
 	 * @throws IOException
 	 */
 	private void restoreFile() throws IOException{
-		File dir = new File("restores/" + _fileId.toString());
+		File dir = new File(_bs.getRestoresDir() + File.separator + _fileId.toString());
 		if (!dir.exists()){
 			throw new NoSuchFileException("0"); //first chunk is missing
 		}
