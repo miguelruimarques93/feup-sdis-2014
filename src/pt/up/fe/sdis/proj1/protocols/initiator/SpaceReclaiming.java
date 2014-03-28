@@ -1,11 +1,14 @@
 package pt.up.fe.sdis.proj1.protocols.initiator;
 
+import java.io.IOException;
 import java.util.PriorityQueue;
 
+import pt.up.fe.sdis.proj1.Chunk;
 import pt.up.fe.sdis.proj1.messages.Message;
 import pt.up.fe.sdis.proj1.protocols.AbstractProtocol;
 import pt.up.fe.sdis.proj1.utils.BackupSystem;
 import pt.up.fe.sdis.proj1.utils.FileID;
+import pt.up.fe.sdis.proj1.utils.MyFile;
 
 public class SpaceReclaiming extends AbstractProtocol {
     public SpaceReclaiming(BackupSystem bs, boolean clearExcess) {
@@ -13,6 +16,8 @@ public class SpaceReclaiming extends AbstractProtocol {
         _bs = bs;
         
        PriorityQueue<BackupSystem.Files.ChunkInfo> chunksToRemove = _bs.Files.getChunksToRemove();
+       
+       System.out.println(chunksToRemove.size());
        
        if(clearExcess){
            while(!chunksToRemove.isEmpty() && (chunksToRemove.peek().getExcessDegree() > 0 || _bs.getAvailableSpace() < 0)){
@@ -30,8 +35,19 @@ public class SpaceReclaiming extends AbstractProtocol {
        }
     }
 
-    private void sendRemovedNotification(FileID fileId, int chunkNo){    
-        Message msg = Message.makeRemoved(fileId.toArray(), chunkNo);
+    private void sendRemovedNotification(FileID fileId, int chunkNo){  
+        int rrd = _bs.Files.getChunkRealReplicationDegree(fileId, chunkNo);
+        
+        if (rrd == 1) {
+            try {
+                int drd = _bs.Files.getChunkDesiredReplicationDegree(fileId, chunkNo);
+                byte[] chunkArray = MyFile.ReadChunk(fileId, chunkNo);
+                Chunk chunk = new Chunk(chunkNo, drd, fileId, chunkArray);
+                new ChunkBackup(_bs, chunk);
+            } catch (IOException e) {
+            }
+        }
+        Message msg = Message.makeRemoved(fileId, chunkNo);
         _bs.Comm.MC.Sender.Send(msg);
     }
     @Override

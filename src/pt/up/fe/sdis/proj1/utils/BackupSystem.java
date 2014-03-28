@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -19,7 +20,9 @@ import pt.up.fe.sdis.proj1.Chunk;
 import pt.up.fe.sdis.proj1.messages.Message;
 import pt.up.fe.sdis.proj1.protocols.initiator.ChunkBackup;
 import pt.up.fe.sdis.proj1.protocols.initiator.FileBackup;
+import pt.up.fe.sdis.proj1.protocols.initiator.FileDeletion;
 import pt.up.fe.sdis.proj1.protocols.initiator.FileRestore;
+import pt.up.fe.sdis.proj1.protocols.initiator.SpaceReclaiming;
 import pt.up.fe.sdis.proj1.protocols.peers.PeerChunkBackup;
 import pt.up.fe.sdis.proj1.protocols.peers.PeerChunkRestore;
 import pt.up.fe.sdis.proj1.protocols.peers.PeerFileDeletion;
@@ -42,6 +45,7 @@ public class BackupSystem {
     }
 
     public BackupSystem(Pair<String, Integer> mc, Pair<String, Integer> mdb, Pair<String, Integer> mdr, String myAddr) throws IOException {
+        Log.log(Level.INFO, "Initializing Communicator");
         Comm = new Communicator(mc, mdb, mdr, myAddr);
         Files = new Files(new File("database.db"));
         initializePeerProtocols();
@@ -60,9 +64,10 @@ public class BackupSystem {
 
     public interface BackupFileListener {
         public void FileAdded(String filePath);
+
         public void FileRemoved(String filePath);
     }
-    
+
     public static class Files {
         private static class FileAdder extends SQLiteJob<Object> {
             public FileAdder(FileID file) {
@@ -87,7 +92,7 @@ public class BackupSystem {
                     st.dispose();
                 }
             }
-            
+
             private FileID _fileId;
         }
 
@@ -113,32 +118,34 @@ public class BackupSystem {
                     st.dispose();
                 }
             }
-            
+
             private FileID _file;
         }
 
         private static class OwnFileAdder extends SQLiteJob<Object> {
-            public OwnFileAdder(String filePath, FileID fileId, Integer numberOfChunks) {
+            public OwnFileAdder(String filePath, FileID fileId, Integer numberOfChunks, Long modDate) {
                 _filePath = filePath;
                 _fileId = fileId;
                 _numberOfChunks = numberOfChunks;
+                _modDate = modDate;
             }
-            
+
             @Override
             protected Object job(SQLiteConnection connection) throws Throwable {
-                exec(connection, _filePath, _fileId, _numberOfChunks);
+                exec(connection, _filePath, _fileId, _numberOfChunks, _modDate);
                 return null;
             }
 
-            public static void exec(SQLiteConnection connection, String filePath, FileID fileId, Integer numberOfChunks) throws SQLiteException {
+            public static void exec(SQLiteConnection connection, String filePath, FileID fileId, Integer numberOfChunks, Long modDate) throws SQLiteException {
                 String fileID = fileId.toString();
 
-                SQLiteStatement st = connection.prepare("INSERT INTO OwnFile (id, filePath, fileId, numberChunks) values(?, ?, ?, ?)");
+                SQLiteStatement st = connection.prepare("INSERT INTO OwnFile (id, filePath, modifiedDate, fileId, numberChunks) values(?, ?, ?, ?, ?)");
                 try {
                     st.bind(1, filePath.hashCode());
                     st.bind(2, filePath);
-                    st.bind(3, fileID);
-                    st.bind(4, numberOfChunks);
+                    st.bind(3, modDate);
+                    st.bind(4, fileID);
+                    st.bind(5, numberOfChunks);
                     st.stepThrough();
                 } finally {
                     st.dispose();
@@ -148,13 +155,14 @@ public class BackupSystem {
             private String _filePath;
             private FileID _fileId;
             private Integer _numberOfChunks;
+            private Long _modDate;
         }
 
         private static class OwnFileRemover extends SQLiteJob<Object> {
             public OwnFileRemover(String filePath) {
                 _filePath = filePath;
             }
-            
+
             @Override
             protected Object job(SQLiteConnection connection) throws Throwable {
                 exec(connection, _filePath);
@@ -180,7 +188,7 @@ public class BackupSystem {
                 _chunkNo = chunkNo;
                 _replicationDeegree = replicationDegree;
             }
-            
+
             @Override
             protected Object job(SQLiteConnection connection) throws Throwable {
                 exec(connection, _file, _chunkNo, _replicationDeegree);
@@ -233,7 +241,7 @@ public class BackupSystem {
                     st1.dispose();
                 }
             }
-            
+
             private FileID _file;
             private Integer _chunkNo;
         }
@@ -263,7 +271,7 @@ public class BackupSystem {
                     st1.dispose();
                 }
             }
-            
+
             private FileID _file;
             private Integer _chunkNo;
             private String _peerIp;
@@ -294,7 +302,7 @@ public class BackupSystem {
                     st1.dispose();
                 }
             }
-            
+
             private FileID _file;
             private Integer _chunkNo;
             private String _peerIp;
@@ -312,6 +320,7 @@ public class BackupSystem {
                     + "CREATE TABLE OwnFile (                                                                      "
                     + "    id INTEGER NOT NULL,                                                                    "
                     + "    filePath TEXT NOT NULL,                                                                 "
+                    + "    modificationDate INTEGER NOT NULL,                                                      "
                     + "    fileId TEXT NOT NULL,                                                                   "
                     + "    numberChunks INTEGER NOT NULL,                                                          "
                     + "                                                                                            "
@@ -386,14 +395,15 @@ public class BackupSystem {
 
             SQLiteStatement ownfileSt = null;
             try {
-                ownfileSt = db.prepare("SELECT filePath, fileId, numberChunks FROM OwnFile");
+                ownfileSt = db.prepare("SELECT filePath, fileId, modificationDate, numberChunks FROM OwnFile");
                 while (ownfileSt.step()) {
                     String filePath = ownfileSt.columnString(0);
                     System.err.println(ownfileSt.columnString(1));
                     FileID fileId = new FileID(ownfileSt.columnString(1));
                     System.err.println(fileId);
-                    Integer numberChunks = ownfileSt.columnInt(2);
-                    _ownFiles.put(filePath, Pair.make_pair(fileId, numberChunks));
+                    Long modDate = ownfileSt.columnLong(2);
+                    Integer numberChunks = ownfileSt.columnInt(3);
+                    _ownFiles.put(Pair.make_pair(filePath, modDate), Pair.make_pair(fileId, numberChunks));
                 }
             } catch (SQLiteException e) {
                 e.printStackTrace();
@@ -436,7 +446,7 @@ public class BackupSystem {
         }
 
         SQLiteConnection db;
-        
+
         public Files(File databaseFile) {
             Logger.getLogger("com.almworks.sqlite4java").setLevel(Level.OFF);
 
@@ -473,7 +483,7 @@ public class BackupSystem {
                         return null;
                     }
                 });
-                
+
                 // db.exec("PRAGMA foreign_keys = ON;");
             } catch (SQLiteException e) {
 
@@ -497,13 +507,13 @@ public class BackupSystem {
 
         public boolean addOwnFile(MyFile file) {
             if (!containsOwnFile(file.getPath())) {
-                _ownFiles.put(file.getPath(), Pair.make_pair(file.getFileId(), file.getNumberOfChunks()));
-                queue.execute(new OwnFileAdder(file.getPath(), file.getFileId(), file.getNumberOfChunks()));
-//                try {
-//                    OwnFileAdder.exec(db, filePath, fileId, numberOfChunks);
-//                } catch (SQLiteException e) {
-//                    e.printStackTrace();
-//                }
+                _ownFiles.put(Pair.make_pair(file.getPath(), file.getLastModifiedDate()), Pair.make_pair(file.getFileId(), file.getNumberOfChunks()));
+                queue.execute(new OwnFileAdder(file.getPath(), file.getFileId(), file.getNumberOfChunks(), file.getLastModifiedDate()));
+                // try {
+                // OwnFileAdder.exec(db, filePath, fileId, numberOfChunks);
+                // } catch (SQLiteException e) {
+                // e.printStackTrace();
+                // }
                 if (fileListener != null) {
                     fileListener.FileAdded(file.getPath());
                 }
@@ -515,12 +525,13 @@ public class BackupSystem {
             if (containsOwnFile(filePath)) {
                 _ownFiles.remove(filePath);
                 queue.execute(new OwnFileRemover(filePath));
-//                try {
-//                    OwnFileRemover.exec(db, filePath);
-//                } catch (SQLiteException e) {
-//                    e.printStackTrace();
-//                }
-                if (fileListener != null) fileListener.FileRemoved(filePath);
+                // try {
+                // OwnFileRemover.exec(db, filePath);
+                // } catch (SQLiteException e) {
+                // e.printStackTrace();
+                // }
+                if (fileListener != null)
+                    fileListener.FileRemoved(filePath);
             }
         }
 
@@ -532,12 +543,12 @@ public class BackupSystem {
             if (!containsFile(file)) {
                 _internalMap.put(file.toString(), new ConcurrentHashMap<Integer, Pair<Integer, HashSet<String>>>());
                 queue.execute(new FileAdder(file));
-//                try {
-//                    FileAdder.exec(db, file);
-//                } catch (SQLiteException e) {
-//                    // TODO Auto-generated catch block
-//                    e.printStackTrace();
-//                }
+                // try {
+                // FileAdder.exec(db, file);
+                // } catch (SQLiteException e) {
+                // // TODO Auto-generated catch block
+                // e.printStackTrace();
+                // }
             }
             return true;
         }
@@ -546,12 +557,12 @@ public class BackupSystem {
             if (containsFile(file)) {
                 _internalMap.remove(file.toString());
                 queue.execute(new FileRemover(file));
-//                try {
-//                    FileRemover.exec(db, file);
-//                } catch (SQLiteException e) {
-//                    // TODO Auto-generated catch block
-//                    e.printStackTrace();
-//                }
+                // try {
+                // FileRemover.exec(db, file);
+                // } catch (SQLiteException e) {
+                // // TODO Auto-generated catch block
+                // e.printStackTrace();
+                // }
             }
         }
 
@@ -581,11 +592,11 @@ public class BackupSystem {
             if (!fileEntry.containsKey(chunkNo)) {
                 fileEntry.put(chunkNo, Pair.make_pair(replDegree, new HashSet<String>()));
                 queue.execute(new ChunkAdder(file, chunkNo, replDegree));
-//                try {
-//                    ChunkAdder.exec(db, file, chunkNo, replDegree);
-//                } catch (SQLiteException e) {
-//                    e.printStackTrace();
-//                }
+                // try {
+                // ChunkAdder.exec(db, file, chunkNo, replDegree);
+                // } catch (SQLiteException e) {
+                // e.printStackTrace();
+                // }
             }
             return true;
         }
@@ -594,14 +605,14 @@ public class BackupSystem {
             if (containsChunk(file, chunkNo)) {
                 ConcurrentHashMap<Integer, Pair<Integer, HashSet<String>>> m = _internalMap.get(file.toString());
                 m.remove(chunkNo);
-                if (m.isEmpty()) 
+                if (m.isEmpty())
                     removeFile(file);
                 queue.execute(new ChunkRemover(file, chunkNo));
-//                try {
-//                    ChunkRemover.exec(db, file, chunkNo);
-//                } catch (SQLiteException e) {
-//                    e.printStackTrace();
-//                }
+                // try {
+                // ChunkRemover.exec(db, file, chunkNo);
+                // } catch (SQLiteException e) {
+                // e.printStackTrace();
+                // }
             }
         }
 
@@ -635,12 +646,12 @@ public class BackupSystem {
             synchronized (chunkPeers.second) {
                 if (!chunkPeers.second.contains(peerIp)) {
                     chunkPeers.second.add(peerIp);
-                     queue.execute(new PeerAdder(file, chunkNo, peerIp));
-//                    try {
-//                        peeradder.exec(db, file, chunkno, peerip);
-//                    } catch (sqliteexception e) {
-//                        e.printstacktrace();
-//                    }
+                    queue.execute(new PeerAdder(file, chunkNo, peerIp));
+                    // try {
+                    // peeradder.exec(db, file, chunkno, peerip);
+                    // } catch (sqliteexception e) {
+                    // e.printstacktrace();
+                    // }
                 }
             }
             return true;
@@ -652,15 +663,19 @@ public class BackupSystem {
                 synchronized (chunkPeers.second) {
                     chunkPeers.second.remove(peerIp);
                 }
-                 queue.execute(new PeerRemover(file, chunkNo, peerIp));
-//                try {
-//                    PeerRemover.exec(db, file, chunkNo, peerIp);
-//                } catch (SQLiteException e) {
-//                    e.printStackTrace();
-//                }
+                queue.execute(new PeerRemover(file, chunkNo, peerIp));
+                // try {
+                // PeerRemover.exec(db, file, chunkNo, peerIp);
+                // } catch (SQLiteException e) {
+                // e.printStackTrace();
+                // }
             }
         }
 
+        public void addDeletedFile(FileID file) {
+            _deletedFiles.put(file.toString(), new Date());
+        }
+        
         @Override
         public String toString() {
             return _internalMap.toString() + "\n" + _ownFiles.toString();
@@ -669,100 +684,106 @@ public class BackupSystem {
         public void setFileListener(BackupFileListener l) {
             fileListener = l;
         }
-        
+
         /**
-         * Iterates through the backed up chunks and places them in a priority queue
+         * Iterates through the backed up chunks and places them in a priority
+         * queue
          * 
-         * @return returns a priority queue with the backedup chunks ordered descendingly by (ActualReplicationDegree - DesiredReplicationDegree)
+         * @return returns a priority queue with the backedup chunks ordered
+         *         descendingly by (ActualReplicationDegree -
+         *         DesiredReplicationDegree)
          */
         public PriorityQueue<ChunkInfo> getChunksToRemove() {
-            
+
             PriorityQueue<ChunkInfo> result = new PriorityQueue<ChunkInfo>();
-            
+
             for (Map.Entry<String, ConcurrentHashMap<Integer, Pair<Integer, HashSet<String>>>> file : _internalMap.entrySet()) {
-                
-                for(Map.Entry<Integer, Pair<Integer, HashSet<String>>> chunk : file.getValue().entrySet()){
+
+                for (Map.Entry<Integer, Pair<Integer, HashSet<String>>> chunk : file.getValue().entrySet()) {
                     Integer actualDegree = chunk.getValue().second.size();
                     ChunkInfo info = new ChunkInfo(file.getKey(), chunk.getKey(), chunk.getValue().first, actualDegree);
                     result.offer(info);
                 }
-                
+
             }
-            
+
             return result;
         }
-        
+
         public PriorityQueue<ChunkInfo> getChunksWithLowRd() {
-            
-            PriorityQueue<ChunkInfo> result = new PriorityQueue<ChunkInfo>(11, new Comparator<ChunkInfo>(){
+
+            PriorityQueue<ChunkInfo> result = new PriorityQueue<ChunkInfo>(11, new Comparator<ChunkInfo>() {
                 @Override
                 public int compare(ChunkInfo arg0, ChunkInfo arg1) {
                     return arg0.getExcessDegree() - arg1.getExcessDegree();
                 }
             });
-            
+
             for (Map.Entry<String, ConcurrentHashMap<Integer, Pair<Integer, HashSet<String>>>> file : _internalMap.entrySet()) {
-                
-                for(Map.Entry<Integer, Pair<Integer, HashSet<String>>> chunk : file.getValue().entrySet()){
+
+                for (Map.Entry<Integer, Pair<Integer, HashSet<String>>> chunk : file.getValue().entrySet()) {
                     Integer actualDegree = chunk.getValue().second.size();
                     ChunkInfo info = new ChunkInfo(file.getKey(), chunk.getKey(), chunk.getValue().first, actualDegree);
                     if (info.getExcessDegree() < 0)
                         result.offer(info);
                 }
-                
+
             }
-            
+
             return result;
         }
-        
-        public static class ChunkInfo implements Comparable<ChunkInfo>{
-            
-            ChunkInfo(String fileId, Integer chunkNo, Integer desiredRD, Integer actualRD){
+
+        public static class ChunkInfo implements Comparable<ChunkInfo> {
+
+            ChunkInfo(String fileId, Integer chunkNo, Integer desiredRD, Integer actualRD) {
                 _fileId = new FileID(fileId);
                 _desiredRD = desiredRD;
                 _actualRD = actualRD;
                 _chunkNo = chunkNo;
             }
-            
-            public Integer getExcessDegree(){
-                return _actualRD-_desiredRD;
+
+            public Integer getExcessDegree() {
+                return _actualRD - _desiredRD;
             }
-            
-            public FileID getFileId(){
+
+            public FileID getFileId() {
                 return _fileId;
             }
-            
-            public Integer getChunkNo(){
+
+            public Integer getChunkNo() {
                 return _chunkNo;
             }
-            
+
             @Override
             public int compareTo(ChunkInfo arg0) {
                 return arg0.getExcessDegree() - getExcessDegree();
             }
-            
+
             private Integer _chunkNo;
             private FileID _fileId;
             private Integer _desiredRD;
             private Integer _actualRD;
         }
-        
+
         private SQLiteQueue queue;
-        
+
         private BackupFileListener fileListener;
 
         public List<String> getOwnFilePaths() {
             List<String> result = new ArrayList<String>();
-            result.addAll(_ownFiles.keySet());
+            for (Pair<String, Long> psi : _ownFiles.keySet())
+                result.add(psi.first);
             return result;
         }
-        
-        private ConcurrentHashMap<String, Pair<FileID, Integer>> _ownFiles = new ConcurrentHashMap<String, Pair<FileID, Integer>>();
-        
+
+        private ConcurrentHashMap<Pair<String, Long>, Pair<FileID, Integer>> _ownFiles = new ConcurrentHashMap<Pair<String, Long>, Pair<FileID, Integer>>();
+
         /*
-         * FileID -> ChunkNo -> [ReplicationDegree (Desired), {Peers}] 
+         * FileID -> ChunkNo -> [ReplicationDegree (Desired), {Peers}]
          */
         private ConcurrentHashMap<String, ConcurrentHashMap<Integer, Pair<Integer, HashSet<String>>>> _internalMap = new ConcurrentHashMap<String, ConcurrentHashMap<Integer, Pair<Integer, HashSet<String>>>>();
+        
+        private ConcurrentHashMap<String, Date> _deletedFiles;
     }
 
     private void initializePeerProtocols() {
@@ -771,26 +792,26 @@ public class BackupSystem {
         _fileDeletion = new PeerFileDeletion(this);
         _spaceReclaiming = new PeerSpaceReclaiming(this);
         _stored = new PeerStored(this);
-        
+
         Schedulers.newThread().schedulePeriodically(new Action1<Scheduler.Inner>() {
             @Override
             public void call(Scheduler.Inner t1) {
                 PriorityQueue<Files.ChunkInfo> chunks = Files.getChunksWithLowRd();
-                while(!chunks.isEmpty()) {
+                while (!chunks.isEmpty()) {
                     Files.ChunkInfo info = chunks.remove();
                     try {
                         new ChunkBackup(BackupSystem.this, new Chunk(info._chunkNo, info._desiredRD, info._fileId, MyFile.ReadChunk(info._fileId, info._chunkNo)));
                     } catch (FileNotFoundException e) {
                         Files.removeChunk(info._fileId, info._chunkNo);
-                        Message msg1 = Message.makeRemoved(info._fileId.toArray(), info._chunkNo);
+                        Message msg1 = Message.makeRemoved(info._fileId, info._chunkNo);
                         Comm.MC.Sender.Send(msg1);
                     } catch (IOException e) {
                     }
                 }
-                
-            }            
+
+            }
         }, 1, 1, TimeUnit.MINUTES);
-        
+
     }
 
     private void shutdownPeerProtocols() {
@@ -809,14 +830,14 @@ public class BackupSystem {
 
     public void deleteChunk(FileID fileId, @NotNull Integer chunkNo) {
         String filePath = "backups/" + fileId.toString() + "/" + chunkNo.toString();
-        File file = new File(filePath);
+        File file = new File(filePath).getAbsoluteFile();
         long fileSize = FileSystemUtils.fileSize(file);
         FileSystemUtils.deleteFile(file);
         Files.removeChunk(fileId, chunkNo);
         _usedSpace -= fileSize;
     }
 
-    public void deleteFile(FileID fileId) {
+    public void deletePhysicalFile(FileID fileId) {
         String dirPath = "backups/" + fileId.toString();
         File dir = new File(dirPath);
         long dirSize = FileSystemUtils.fileSize(dir);
@@ -825,14 +846,18 @@ public class BackupSystem {
         _usedSpace -= dirSize;
     }
 
-    public FileBackup backupFile(File file) {
+    public FileBackup backupFile(File file, int replicationDegree) {
         try {
-            return new FileBackup(this, new MyFile(_addr, file.getAbsolutePath()), 2);
+            return new FileBackup(this, new MyFile(_addr, file.getAbsolutePath()), replicationDegree);
         } catch (IOException e) {
             return null;
         }
     }
-    
+
+    public FileBackup backupFile(File file) {
+        return backupFile(file, _defaultReplicationDegree);
+    }
+
     public FileRestore restoreFile(String filepath, String destpath) {
         try {
             return new FileRestore(this, filepath, destpath);
@@ -841,22 +866,38 @@ public class BackupSystem {
         }
     }
 
+    public FileDeletion deleteFile(String filePath) {
+        return new FileDeletion(this, filePath);
+    }
+
     public long getUsedSpace() {
         return _usedSpace;
     }
 
-    public void setTotalSpace(long totalSpace){
+    public void setTotalSpace(long totalSpace) {
         _totalSpace = totalSpace;
+        if (getAvailableSpace() < 0) {
+            new SpaceReclaiming(this, false);
+        }
+
     }
-    
-    public long getTotalSpace(){
+
+    public void setDefaultReplicationDegree(int value) {
+        _defaultReplicationDegree = value;
+    }
+
+    public int getDefaultReplicationDegree() {
+        return _defaultReplicationDegree;
+    }
+
+    public long getTotalSpace() {
         return _totalSpace;
     }
-    
-    public long getAvailableSpace(){
+
+    public long getAvailableSpace() {
         return _totalSpace - _usedSpace;
     }
-    
+
     private PeerChunkBackup _chunkBackup;
     private PeerChunkRestore _chunkRestore;
     private PeerFileDeletion _fileDeletion;
@@ -865,5 +906,9 @@ public class BackupSystem {
     private String _addr;
     private long _usedSpace;
     private long _totalSpace = 64000000L;
+    private int _defaultReplicationDegree = 1;
+
+    public static final Logger Log = Logger.getLogger(BackupSystem.class.getName());
 
 }
+

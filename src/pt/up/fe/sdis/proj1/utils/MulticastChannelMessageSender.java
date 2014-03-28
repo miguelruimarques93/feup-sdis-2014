@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
+import java.util.logging.Level;
 
 import pt.up.fe.sdis.proj1.messages.Message;
 
@@ -31,6 +32,7 @@ public class MulticastChannelMessageSender {
         synchronized (_mCastSocket) {
             try {
                 _mCastSocket.send(dp);
+                BackupSystem.Log.log(Level.INFO, "Sending " + msg.type + ": " + msg.getFileID() + (msg.getChunkNo() != null ? " " + msg.getChunkNo() : ""));
                 return true;
             } catch (IOException e) {
                 return false;

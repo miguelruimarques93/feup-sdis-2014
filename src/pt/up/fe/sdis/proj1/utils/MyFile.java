@@ -13,6 +13,7 @@ import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Date;
 
 import pt.up.fe.sdis.proj1.Chunk;
 
@@ -28,13 +29,13 @@ public class MyFile {
                 BasicFileAttributes.class);
 
         
-        _lastModifiedTime = attr.lastModifiedTime().toString();
+        _lastModifiedTime = attr.lastModifiedTime().toMillis();
         _ownerIP = myAddr;
         _fileSize = attr.size();
 
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            String text = _ownerIP + _absolutePath + _lastModifiedTime;
+            String text = _ownerIP + _absolutePath + _lastModifiedTime.toString()/* + new Date().getTime();*/;
             _fileId = new FileID(digest.digest(text.getBytes(StandardCharsets.UTF_8)));
         } catch (NoSuchAlgorithmException e) {
             _fileId = null;
@@ -98,7 +99,6 @@ public class MyFile {
     	return chunk;
     }
 
-    
     @Override
     public String toString() {
         return _fileId.toString();
@@ -109,11 +109,13 @@ public class MyFile {
         return _fileId.hashCode();
     }
     
+    public Long getLastModifiedDate() { return _lastModifiedTime; }
+    
     FileID _fileId;
 
     private String _absolutePath;
     private java.io.File _file;
-    private String _lastModifiedTime;
+    private Long _lastModifiedTime;
     private String _ownerIP;
     
     private long _fileSize;

@@ -20,15 +20,15 @@ import rx.schedulers.Schedulers;
 import rx.subjects.AsyncSubject;
 
 public class ChunkBackup extends AbstractProtocol {
-    
+
     public class ChunkBackupException extends IOException {
         private static final long serialVersionUID = 1L;
-        
+
         public ChunkBackupException(FileID fileId, Integer chunkNo) {
             super("Timeout sending chunk '" + chunkNo + "' of file '" + fileId + "'");
         }
     }
-    
+
     public ChunkBackup(final BackupSystem bs, final Chunk chunk) {
         super(bs.Comm.MC.Publisher);
         final Message msg = Message.makePutChunk(chunk);
@@ -38,29 +38,29 @@ public class ChunkBackup extends AbstractProtocol {
         bs.Comm.MDB.Sender.Send(msg);
 
         Action1<Scheduler.Inner> act = new Action1<Scheduler.Inner>() {
-            int TimeInterval = 500;
-            int NumTimes = 0;
+            int timeInterval = 500;
+            int numTimes = 0;
 
             @Override
             public void call(Inner arg0) {
                 synchronized (_repliers) {
-                    NumTimes++;
+                    numTimes++;
 
                     int numRepliers = _repliers.size();
 
                     if (numRepliers < chunk.replicationDeg) {
-                        if (NumTimes == 5) {
-                            if (numRepliers == 0) {
+                        if (numTimes == 5) {
+                            if (numRepliers == 0)
                                 resultPublisher.onError(new ChunkBackupException(chunk.fileID, chunk.chunkNo));
-                            }
-                            
+                            else
+                                resultPublisher.onCompleted();
+
                             finish();
                         } else {
                             _repliers.clear();
-                            TimeInterval *= 2;
+                            timeInterval *= 2;
                             bs.Comm.MDB.Sender.Send(msg);
-                            arg0.schedule(this, TimeInterval,
-                                    TimeUnit.MILLISECONDS);
+                            arg0.schedule(this, timeInterval, TimeUnit.MILLISECONDS);
                         }
                     } else {
                         resultPublisher.onCompleted();
@@ -70,20 +70,21 @@ public class ChunkBackup extends AbstractProtocol {
             }
         };
 
-        Schedulers.newThread().schedule(act, 500, TimeUnit.MILLISECONDS);
+        Schedulers.io().schedule(act, 500, TimeUnit.MILLISECONDS);
     }
 
     @Override
     protected void ProcessMessage(Message msg) {
-        System.out.println("Received STORED: " + msg.getChunkNo());
         synchronized (_repliers) {
             _repliers.add(msg.Sender);
         }
     }
 
     private AsyncSubject<Object> resultPublisher = AsyncSubject.create();
-    
-    public Observable<Object> getObservable() { return resultPublisher.asObservable(); }
-    
+
+    public Observable<Object> getObservable() {
+        return resultPublisher.asObservable();
+    }
+
     private Set<InetAddress> _repliers = new HashSet<InetAddress>();
 }

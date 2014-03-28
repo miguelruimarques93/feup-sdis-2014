@@ -5,9 +5,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 
 import pt.up.fe.sdis.proj1.Chunk;
 import pt.up.fe.sdis.proj1.utils.FileID;
@@ -159,7 +157,7 @@ public class Message {
         return result;
     }
 
-    public static Message makeRemoved(byte[] fileId, int chunkNo) {
+    public static Message makeRemoved(FileID fileId, int chunkNo) {
         Message result = new Message(Type.REMOVED);
         result.setVersion(1, 0);
         result.setFileID(fileId);
@@ -167,7 +165,7 @@ public class Message {
         return result;
     }
 
-    public static Message makeGetChunk(byte[] fileID, int chunkNo) {
+    public static Message makeGetChunk(FileID fileID, int chunkNo) {
         Message result = new Message(Type.GETCHUNK);
 
         result.setVersion(1, 0);
@@ -177,7 +175,7 @@ public class Message {
         return result;
     }
 
-    public static Message makeDelete(byte[] fileID) {
+    public static Message makeDelete(FileID fileID) {
         Message result = new Message(Type.DELETE);
         result.setFileID(fileID);
         return result;
@@ -209,14 +207,12 @@ public class Message {
 
         paramNum++;
         String fileId = msgParams[paramNum];
-        ArrayList<String> chars = new ArrayList<String>(Arrays.asList(fileId
-                .split("(?<=\\G..)")));
-        Collections.reverse(chars);
+        String[] chars = fileId.split("(?<=\\G..)");
 
         byte[] tempFileID = new byte[32];
         
-        for (int i = 0; i < tempFileID.length; ++i)
-            tempFileID[i] = (byte) Short.parseShort(chars.get(i), 16);
+        for (int i = chars.length - 1; i >= 0; --i)
+            tempFileID[(tempFileID.length - 1) - i] = (byte) Short.parseShort(chars[i], 16);
         
         msg.setFileID(tempFileID);
 

@@ -25,12 +25,10 @@ public class PeerChunkBackup extends AbstractProtocol {
 
     @Override
     protected void ProcessMessage(final Message msg) {
-        System.out.println("Received PUTCHUNK: " + msg.getChunkNo());
         if(_bs.getAvailableSpace() < msg.getBody().length)
             new SpaceReclaiming(_bs, true);
 
         if(_bs.getAvailableSpace() >= msg.getBody().length){
-            System.out.println("Saving: " + msg.getChunkNo());
             Schedulers.io().schedule(new Action1<Scheduler.Inner>() {
                 @Override
                 public void call(Scheduler.Inner arg0) {

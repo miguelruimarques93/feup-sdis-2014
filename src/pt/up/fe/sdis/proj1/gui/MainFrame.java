@@ -13,6 +13,8 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Date;
 import java.util.List;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
 
 import javax.swing.DefaultListModel;
 import javax.swing.JFileChooser;
@@ -24,13 +26,17 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JProgressBar;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.ListSelectionModel;
 import javax.swing.border.EmptyBorder;
+import javax.swing.text.DefaultCaret;
 
 import net.miginfocom.swing.MigLayout;
 import pt.up.fe.sdis.proj1.protocols.initiator.FileBackup;
 import pt.up.fe.sdis.proj1.protocols.initiator.FileRestore;
 import pt.up.fe.sdis.proj1.utils.BackupSystem;
+import pt.up.fe.sdis.proj1.utils.LogFormatter;
 import pt.up.fe.sdis.proj1.utils.Pair;
 import rx.Observer;
 import rx.schedulers.Schedulers;
@@ -44,6 +50,7 @@ public class MainFrame extends JFrame {
     private JList<String> list;
     private DefaultListModel<String> listModel;
     private JProgressBar progressBar;
+    private JTextArea textArea;
 
     /**
      * Create the frame.
@@ -93,6 +100,15 @@ public class MainFrame extends JFrame {
                 dispose();
             }
         });
+        
+        JMenuItem mntmSettings = new JMenuItem("Settings");
+        mntmSettings.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent arg0) {
+                SettingsDialog sd = new SettingsDialog(MainFrame.this, _backupSystem);
+                sd.setVisible(true);
+            }
+        });
+        mnFile.add(mntmSettings);
         mnFile.add(mntmExit);
         
         JMenuItem mntmBackup = new JMenuItem("Backup");
@@ -206,15 +222,55 @@ public class MainFrame extends JFrame {
                 
             }
         });
+        
+        JMenuItem mntmDelete = new JMenuItem("Delete");
+        mntmDelete.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                String filePath = list.getSelectedValue();
+                if (filePath == null) return;
+                
+                _backupSystem.deleteFile(filePath);
+            }
+        });
+        popupMenu.add(mntmDelete);
         popupMenu.add(mntmRestore);
         
         progressBar = new JProgressBar(0, 100);
         panel.add(progressBar, "cell 0 1,growx,aligny center");
         
+        textArea = new JTextArea();
+        DefaultCaret caret = new DefaultCaret();
+        caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+        textArea.setCaret(caret);
+        textArea.setEditable(false);
+        contentPane.add(textArea, BorderLayout.CENTER);
+        
+        JScrollPane scroll = new JScrollPane(textArea, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+        contentPane.add(scroll, BorderLayout.CENTER);
+        
         GuiUtils.setSystemLookAndFeel();
     }
 
     public void initializeBackupSystem(Pair<String, Integer> mc, Pair<String, Integer> mdb, Pair<String, Integer> mdr, InetAddress intf) throws IOException {
+        BackupSystem.Log.addHandler(new Handler() {
+            private LogFormatter formatter = new LogFormatter();
+            
+            @Override
+            public void publish(LogRecord arg0) {
+                textArea.append(formatter.format(arg0) + "\n");
+            }
+            
+            @Override
+            public void flush() {
+            }
+            
+            @Override
+            public void close() throws SecurityException {
+            }
+        });
+        
+        
+        
         _backupSystem = new BackupSystem(mc, mdb, mdr, intf);
         
         if (_backupSystem != null) {

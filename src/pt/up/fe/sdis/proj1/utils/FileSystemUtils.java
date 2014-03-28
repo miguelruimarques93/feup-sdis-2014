@@ -11,7 +11,7 @@ public class FileSystemUtils {
             return 0L;
 
         if (!directory.isDirectory())
-            directory.length();
+            return directory.length();
 
         long size = 0L;
 

@@ -1,23 +1,21 @@
 package pt.up.fe.sdis.proj1.utils;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 
 public class FileID {
 
     public FileID(String hexString) {
-        ArrayList<String> chars = new ArrayList<String>(Arrays.asList(hexString
-                .split("(?<=\\G..)")));
+        String[] chars = hexString.split("(?<=\\G..)");
         
-        if (chars.size() != 32) 
+        if (chars.length != 32) 
             throw new IllegalArgumentException("FileID must have 32 bytes.");
         
         _fileID = new byte[32];
         
         for (int i = 0; i < _fileID.length; ++i)
-            _fileID[i] = (byte) Short.parseShort(chars.get(i), 16);
+            _fileID[i] = (byte) Short.parseShort(chars[i], 16);
         
-        _hexFileID = hexString;
+        _hexFileID = hexString.toLowerCase();
     }
     
     public FileID(byte[] id) {
@@ -47,7 +45,7 @@ public class FileID {
                 StringBuilder sb = new StringBuilder();
                 for (int i = 0; i < _fileID.length; ++i)
                     sb.append(String.format("%02X", _fileID[i]));
-                _hexFileID = sb.toString();
+                _hexFileID = sb.toString().toLowerCase();
             }
         }
         return _hexFileID;
