@@ -40,7 +40,9 @@ public class PeerSpaceReclaiming extends AbstractProtocol {
 				try {
 					chunkArray = _bs.readChunk(msg.getFileID(), msg.getChunkNo());
 				} catch(IOException e) {
-					return;
+				    _bs.Files.removeChunk(msg.getFileID(), msg.getChunkNo());
+				    _bs.Comm.MC.Sender.Send(Message.makeRemoved(msg.getFileID(), msg.getChunkNo()));
+                    return;
 				}
 				
 				final Chunk chunk = new Chunk(msg.getChunkNo(), desiredDegree, msg.getFileID(), chunkArray);

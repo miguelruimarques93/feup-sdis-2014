@@ -36,6 +36,7 @@ import javax.swing.text.DefaultCaret;
 import net.miginfocom.swing.MigLayout;
 import pt.up.fe.sdis.proj1.BackupSystem;
 import pt.up.fe.sdis.proj1.FileVersion;
+import pt.up.fe.sdis.proj1.config.BackupSystemConfiguration;
 import pt.up.fe.sdis.proj1.gui.utils.GuiUtils;
 import pt.up.fe.sdis.proj1.protocols.initiator.ChunkBackup.ChunkBackupException;
 import pt.up.fe.sdis.proj1.protocols.initiator.FileBackup;
@@ -61,9 +62,9 @@ public class MainFrame extends JFrame {
      * 
      * @throws IOException
      */
-    public MainFrame(Pair<String, Integer> mc, Pair<String, Integer> mdb, Pair<String, Integer> mdr, InetAddress intf, String workingDir) throws IOException {
+    public MainFrame(BackupSystemConfiguration configs, InetAddress intf) throws IOException {
         initializeGUI();
-        initializeBackupSystem(mc, mdb, mdr, intf, workingDir);
+        initializeBackupSystem(configs, intf);
     }
 
     protected MainFrame() {
@@ -110,6 +111,7 @@ public class MainFrame extends JFrame {
             public void actionPerformed(ActionEvent arg0) {
                 SettingsDialog sd = new SettingsDialog(MainFrame.this, _backupSystem);
                 sd.setVisible(true);
+                _backupSystem.commitSettings();
             }
         });
         mnFile.add(mntmSettings);
@@ -280,7 +282,7 @@ public class MainFrame extends JFrame {
         GuiUtils.setSystemLookAndFeel();
     }
 
-    public void initializeBackupSystem(Pair<String, Integer> mc, Pair<String, Integer> mdb, Pair<String, Integer> mdr, InetAddress intf, String workingDir) throws IOException {
+    public void initializeBackupSystem(BackupSystemConfiguration configs, InetAddress intf) throws IOException {
         BackupSystem.Log.addHandler(new Handler() {
             private LogFormatter formatter = new LogFormatter();
             
@@ -300,7 +302,7 @@ public class MainFrame extends JFrame {
         
         
         
-        _backupSystem = new BackupSystem(mc, mdb, mdr, intf, workingDir);
+        _backupSystem = new BackupSystem(configs, intf);
         
         if (_backupSystem != null) {
             _backupSystem.Files.setFileListener(new BackupSystem.BackupFileListener() {

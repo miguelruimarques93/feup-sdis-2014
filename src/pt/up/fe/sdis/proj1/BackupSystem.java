@@ -13,6 +13,7 @@ import java.util.PriorityQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
+import pt.up.fe.sdis.proj1.config.BackupSystemConfiguration;
 import pt.up.fe.sdis.proj1.fileInfo.ChunkInfo;
 import pt.up.fe.sdis.proj1.fileInfo.Files;
 import pt.up.fe.sdis.proj1.messages.Message;
@@ -31,7 +32,6 @@ import pt.up.fe.sdis.proj1.utils.Communicator;
 import pt.up.fe.sdis.proj1.utils.FileID;
 import pt.up.fe.sdis.proj1.utils.FileSystemUtils;
 import pt.up.fe.sdis.proj1.utils.MyFile;
-import pt.up.fe.sdis.proj1.utils.Pair;
 import rx.Scheduler;
 import rx.Scheduler.Inner;
 import rx.functions.Action1;
@@ -40,14 +40,14 @@ import rx.schedulers.Schedulers;
 import com.sun.istack.internal.NotNull;
 
 public class BackupSystem {
-    public BackupSystem(Pair<String, Integer> mc, Pair<String, Integer> mdb, Pair<String, Integer> mdr, InetAddress myAddr, String workingDir) throws IOException {
-        this(mc, mdb, mdr, myAddr.toString().substring(1), workingDir);
+    public BackupSystem(BackupSystemConfiguration configs, InetAddress intf) throws IOException {
+        this(configs, intf.toString().substring(1));
     }
 
-    public BackupSystem(Pair<String, Integer> mc, Pair<String, Integer> mdb, Pair<String, Integer> mdr, String myAddr, String workingDir) throws IOException {  
-        setWorkingDir(workingDir);
+    public BackupSystem(BackupSystemConfiguration configs, String myAddr) throws IOException {  
+        _systemConfigs = configs;
         
-        Comm = new Communicator(mc, mdb, mdr, myAddr);
+        Comm = new Communicator(_systemConfigs.getMC(), _systemConfigs.getMDB(), _systemConfigs.getMDR(), myAddr);
         Files = new Files(getDatabaseFilePath());
         
         _usedSpace = FileSystemUtils.fileSize(getBackupsDir());
@@ -182,7 +182,7 @@ public class BackupSystem {
     }
 
     public FileBackup backupFile(File file) {
-        return backupFile(file, _defaultReplicationDegree);
+        return backupFile(file, getDefaultReplicationDegree());
     }
 
     public FileRestore restoreFile(String filepath, String destpath, Long modificationMillis) {
@@ -202,39 +202,28 @@ public class BackupSystem {
     }
 
     public void setTotalSpace(long totalSpace) {
-        _totalSpace = totalSpace;
+        _systemConfigs.setAvailableSpace(totalSpace);
         if (getAvailableSpace() < 0) {
             new SpaceReclaiming(this, false);
         }
     }
 
     public void setDefaultReplicationDegree(int value) {
-        _defaultReplicationDegree = value;
+        _systemConfigs.setDefaultReplicationDeegree(value);
     }
 
     public int getDefaultReplicationDegree() {
-        return _defaultReplicationDegree;
+        return _systemConfigs.getDefaultReplicationDeegree();
     }
 
     public long getTotalSpace() {
-        return _totalSpace;
+        return _systemConfigs.getAvailableSpace();
     }
 
     public long getAvailableSpace() {
-        return _totalSpace - _usedSpace;
+        return getTotalSpace() - _usedSpace;
     }
-
-    private void setWorkingDir(String dirPath) {
-        File dir = new File(dirPath).getAbsoluteFile();
-        if (!dir.exists())
-            dir.mkdirs();
-
-        if (!dir.isDirectory())
-            throw new IllegalArgumentException("Not a directory!");
-
-        _workingDir = dir.getAbsolutePath();
-    }
-
+    
     public byte[] readChunk(FileID fileId, Integer chunkNo) throws IOException {
         File f = new File(getBackupsDir() + File.separator + fileId.toString() + File.separator + chunkNo.toString());
         if (!f.exists()) 
@@ -253,6 +242,10 @@ public class BackupSystem {
         return _workingDir;
     }
 
+    public void commitSettings() {
+        _systemConfigs.save();
+    }
+    
     private PeerChunkBackup _chunkBackup;
     private PeerChunkRestore _chunkRestore;
     private PeerFileDeletion _fileDeletion;
@@ -262,19 +255,15 @@ public class BackupSystem {
     private String _addr;
     private String _workingDir;
     private long _usedSpace;
-    private long _totalSpace = 64000000L;
-    private int _defaultReplicationDegree = 1;
-    private int _restorePort = 11094;
-    private int _protocolVersion = 1;
 
     public static final Logger Log = Logger.getLogger(BackupSystem.class.getName());
 
     public int getRestorePort() {
-        return _restorePort;
+        return _systemConfigs.getRestorePort();
     }
 
     public void setRestorePort(int restorePort) {
-        _restorePort = restorePort;
+        _systemConfigs.setRestorePort(restorePort);
     }
 
     public InetAddress getAddress() {
@@ -286,10 +275,12 @@ public class BackupSystem {
     }
 
     public void setProtocolVersion(int protocolVersion) {
-        _protocolVersion = protocolVersion;
+        _systemConfigs.setProtocolVersion(protocolVersion);
     }
 
     public int getProtocolVersion() {
-        return _protocolVersion;
+        return _systemConfigs.getProtocolVersion();
     }
+    
+    private BackupSystemConfiguration _systemConfigs;
 }

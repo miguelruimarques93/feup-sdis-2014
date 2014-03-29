@@ -10,6 +10,18 @@ import javax.swing.JTextField;
 
 public class TextFieldWithPlaceholder extends JTextField implements KeyListener, FocusListener {
 
+    @Override
+    public void setText(String arg0) {
+        if (arg0 == null || arg0.equals("")) {
+            super.setText(_placeholderStr);
+            super.setForeground(_placeholderColor);
+        } else {
+            super.setText(arg0);
+            super.setForeground(_defaultColor);
+        }
+        
+    }
+
     private static final long serialVersionUID = 1L;
     
     public TextFieldWithPlaceholder( String placeholderStr, Color placeholderColor) {

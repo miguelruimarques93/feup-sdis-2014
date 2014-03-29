@@ -10,6 +10,9 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.net.InetAddress;
 
 import javax.swing.JButton;
@@ -21,6 +24,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 
+import pt.up.fe.sdis.proj1.config.BackupSystemConfiguration;
 import pt.up.fe.sdis.proj1.gui.utils.GuiUtils;
 import pt.up.fe.sdis.proj1.gui.utils.IpVerifier;
 import pt.up.fe.sdis.proj1.gui.utils.PortVerifier;
@@ -60,7 +64,8 @@ public class ConfigWindow {
      * Create the application.
      */
     public ConfigWindow() {
-        initialize();
+        initializeConfigs();
+        initializeGUI();
     }
 
     private FlowLayout _fl_panel = new FlowLayout(FlowLayout.CENTER, 5, 5);
@@ -80,10 +85,22 @@ public class ConfigWindow {
     private JTextField workingDirectory_txt;
     private JLabel lblBrowse;
     
+    private void initializeConfigs() {
+        String userHome = System.getProperty("user.home");
+        if (userHome == null) {
+            userHome = "";
+        }
+        
+        File userHomeDir = new File(userHome).getAbsoluteFile();
+        File configFile = new File(userHomeDir.getAbsolutePath() + File.separator + "backupSystem.config.ser");
+        
+        _systemConfiguration = BackupSystemConfiguration.loadFromFile(configFile);
+    }
+    
     /**
      * Initialize the contents of the frame.
      */
-    private void initialize() {
+    private void initializeGUI() {
         frame = new JFrame();
         frame.setResizable(false);        
         frame.setBounds(100, 100, 738, 226);
@@ -117,7 +134,7 @@ public class ConfigWindow {
         
         workingDirectory_txt = new JTextField();
         workingDirectory_txt.setEditable(false);
-        workingDirectory_txt.setText(new File("backups").getAbsolutePath());
+        workingDirectory_txt.setText(_systemConfiguration.getWorkingDir());
         GridBagConstraints gbc_workingDirectory_txt = new GridBagConstraints();
         gbc_workingDirectory_txt.gridwidth = 6;
         gbc_workingDirectory_txt.insets = new Insets(0, 0, 5, 5);
@@ -183,7 +200,7 @@ public class ConfigWindow {
                 _panelMain.add(lblNewLabel, gbc_lblNewLabel);
         
         txt_mc_ip = new TextFieldWithPlaceholder("IP", Color.LIGHT_GRAY);
-        
+        txt_mc_ip.setText((_systemConfiguration.getMC() == null ? "" : _systemConfiguration.getMC().first));
                 GridBagConstraints gbc_txt_mc_ip = new GridBagConstraints();
                 gbc_txt_mc_ip.fill = GridBagConstraints.BOTH;
                 gbc_txt_mc_ip.insets = new Insets(0, 0, 5, 5);
@@ -193,6 +210,7 @@ public class ConfigWindow {
                 txt_mc_ip.setColumns(10);
         
         txt_mc_port = new TextFieldWithPlaceholder("Port", Color.lightGray);
+        txt_mc_port.setText((_systemConfiguration.getMC() == null ? "" : _systemConfiguration.getMC().second.toString()));
         GridBagConstraints gbc_txt_mc_port = new GridBagConstraints();
         gbc_txt_mc_port.fill = GridBagConstraints.BOTH;
         gbc_txt_mc_port.insets = new Insets(0, 0, 5, 5);
@@ -233,6 +251,7 @@ public class ConfigWindow {
         _panelMain.add(lblNewLabel_1, gbc_lblNewLabel_1);
         
         txt_mdb_ip = new TextFieldWithPlaceholder("IP", Color.lightGray);
+        txt_mdb_ip.setText((_systemConfiguration.getMDB() == null ? "" : _systemConfiguration.getMDB().first));
         GridBagConstraints gbc_txt_mdb_ip = new GridBagConstraints();
         gbc_txt_mdb_ip.fill = GridBagConstraints.BOTH;
         gbc_txt_mdb_ip.insets = new Insets(0, 0, 5, 5);
@@ -242,6 +261,7 @@ public class ConfigWindow {
         txt_mdb_ip.setColumns(10);
         
         txt_mdb_port = new TextFieldWithPlaceholder("Port", Color.lightGray);
+        txt_mdb_port.setText((_systemConfiguration.getMDB() == null ? "" : _systemConfiguration.getMDB().second.toString()));
         GridBagConstraints gbc_txt_mdb_port = new GridBagConstraints();
         gbc_txt_mdb_port.fill = GridBagConstraints.HORIZONTAL;
         gbc_txt_mdb_port.insets = new Insets(0, 0, 5, 5);
@@ -282,6 +302,7 @@ public class ConfigWindow {
         _panelMain.add(lblDataRestoreChannel, gbc_lblDataRestoreChannel);
         
         txt_mdr_ip = new TextFieldWithPlaceholder("IP", Color.lightGray);
+        txt_mdr_ip.setText((_systemConfiguration.getMDR() == null ? "" : _systemConfiguration.getMDR().first));
         txt_mdr_ip.setColumns(10);
         GridBagConstraints gbc_txt_mdr_ip = new GridBagConstraints();
         gbc_txt_mdr_ip.fill = GridBagConstraints.BOTH;
@@ -299,6 +320,7 @@ public class ConfigWindow {
         _panelMain.add(label_2, gbc_label_2);
         
         txt_mdr_port = new TextFieldWithPlaceholder("Port", Color.lightGray);
+        txt_mdr_port.setText((_systemConfiguration.getMDR() == null ? "" : _systemConfiguration.getMDR().second.toString()));
         GridBagConstraints gbc_txt_mdr_port = new GridBagConstraints();
         gbc_txt_mdr_port.fill = GridBagConstraints.HORIZONTAL;
         gbc_txt_mdr_port.insets = new Insets(0, 0, 5, 5);
@@ -334,10 +356,15 @@ public class ConfigWindow {
                     final String workingDir = workingDirectory_txt.getText();
                     
                     if (NetworkUtils.isIPAddress(mc.first) && NetworkUtils.isIPAddress(mdb.first) && NetworkUtils.isIPAddress(mdr.first) && NetworkUtils.isValidPort(mc.second) && NetworkUtils.isValidPort(mdb.second) && NetworkUtils.isValidPort(mdr.second)) {
+                        _systemConfiguration.setMC(mc);
+                        _systemConfiguration.setMDB(mdb);
+                        _systemConfiguration.setMDR(mdr);
+                        _systemConfiguration.setWorkingDir(workingDir);
+                        
                         EventQueue.invokeLater(new Runnable() {
                             public void run() {
                                 try {
-                                    MainFrame frm = new MainFrame(mc, mdb, mdr, intf, workingDir);
+                                    MainFrame frm = new MainFrame(_systemConfiguration, intf);
                                     frame.dispose();
                                     frm.setVisible(true);
                                 } catch (Exception e) {
@@ -345,6 +372,8 @@ public class ConfigWindow {
                                 }
                             }
                         });
+                        
+                        _systemConfiguration.save();
                     }
                 } catch (Exception e) {
                     return;
@@ -360,4 +389,6 @@ public class ConfigWindow {
 
         GuiUtils.setSystemLookAndFeel();
     }
+
+    BackupSystemConfiguration _systemConfiguration = null;
 }
