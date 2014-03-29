@@ -173,7 +173,7 @@ public class Message {
     public static Message makeGetChunk(FileID fileID, int chunkNo) {
         Message result = new Message(Type.GETCHUNK);
 
-        result.setVersion(2, 0);
+        result.setVersion(1, 0);
         result.setFileID(fileID);
         result.setChunkNo(chunkNo);
 

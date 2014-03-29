@@ -8,12 +8,10 @@ import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 import pt.up.fe.sdis.proj1.BackupSystem;
-import pt.up.fe.sdis.proj1.Chunk;
 import pt.up.fe.sdis.proj1.messages.Message;
 import pt.up.fe.sdis.proj1.protocols.AbstractProtocol;
 import pt.up.fe.sdis.proj1.utils.FileID;
 import pt.up.fe.sdis.proj1.utils.MessageFilter;
-import pt.up.fe.sdis.proj1.utils.MulticastChannelMessageSender;
 import rx.Observable;
 import rx.Scheduler;
 import rx.Scheduler.Inner;

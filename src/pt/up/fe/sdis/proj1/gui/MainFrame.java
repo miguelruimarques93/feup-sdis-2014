@@ -35,7 +35,6 @@ import javax.swing.text.DefaultCaret;
 
 import net.miginfocom.swing.MigLayout;
 import pt.up.fe.sdis.proj1.BackupSystem;
-import pt.up.fe.sdis.proj1.Chunk;
 import pt.up.fe.sdis.proj1.FileVersion;
 import pt.up.fe.sdis.proj1.gui.utils.GuiUtils;
 import pt.up.fe.sdis.proj1.protocols.initiator.ChunkBackup.ChunkBackupException;

@@ -67,7 +67,7 @@ public class FileRestore implements Observer<Object> {
 		//create destination file and append all chunks to it
 		writeChunksToFile(fileListing);
 		
-		// FileSystemUtils.deleteFile(dir);
+		FileSystemUtils.deleteFile(dir);
 	}
 
 	private File[] getSortedChunks(File dir) {
