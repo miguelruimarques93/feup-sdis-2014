@@ -25,7 +25,7 @@ public class MessageFilter implements Func1<Message, Boolean> {
 	
 	@Override
 	public Boolean call(Message arg0) {
-		return arg0.type == _type &&
+		return (arg0.type == _type) &&
 			   (_fileId == null ? true : arg0.getFileID().equals(_fileId)) &&
 			   (_chunkNo == null ? true : arg0.getChunkNo().equals(_chunkNo));
 	}

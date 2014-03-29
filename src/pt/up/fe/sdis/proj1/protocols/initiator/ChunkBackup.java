@@ -26,7 +26,21 @@ public class ChunkBackup extends AbstractProtocol {
 
         public ChunkBackupException(FileID fileId, Integer chunkNo) {
             super("Timeout sending chunk '" + chunkNo + "' of file '" + fileId + "'");
+            
+            _fileId = fileId;
+            _chunkNo = chunkNo;
         }
+        
+        public FileID getFileId() {
+            return _fileId;
+        }
+        
+        public Integer getChunkNo() {
+            return _chunkNo;
+        }
+        
+        private FileID _fileId;
+        private Integer _chunkNo;
     }
 
     public ChunkBackup(final BackupSystem bs, final Chunk chunk) {

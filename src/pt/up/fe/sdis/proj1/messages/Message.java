@@ -12,7 +12,7 @@ import pt.up.fe.sdis.proj1.utils.FileID;
 
 public class Message {
     public enum Type {
-        PUTCHUNK, GETCHUNK, CHUNK, STORED, DELETE, REMOVED, ISDELETED
+        PUTCHUNK, GETCHUNK, CHUNK, STORED, DELETE, REMOVED, ISDELETED, HAVECHUNK, LISTENINGFOR
     }
 
     public final Type type;
@@ -59,6 +59,8 @@ public class Message {
 
     private byte[] body = null;
 
+    private Integer port = null;
+    
     protected void setChunkNo(int c) {
         chunkNo = c;
     }
@@ -106,6 +108,9 @@ public class Message {
         if (chunkNo != null)
             sb.append(' ' + chunkNo.toString());
 
+        if (port != null)
+            sb.append(' ' + port.toString());
+        
         if (replicationDeg != null)
             sb.append(' ' + replicationDeg.toString());
 
@@ -168,7 +173,7 @@ public class Message {
     public static Message makeGetChunk(FileID fileID, int chunkNo) {
         Message result = new Message(Type.GETCHUNK);
 
-        result.setVersion(1, 0);
+        result.setVersion(2, 0);
         result.setFileID(fileID);
         result.setChunkNo(chunkNo);
 
@@ -185,6 +190,35 @@ public class Message {
         Message result = new Message(Type.ISDELETED);
         result.setVersion(2, 0);
         result.setFileID(fileID);
+        return result;
+    }
+    
+    public static Message makeHaveChunk(FileID fileID, int chunkNo) {
+        Message result = new Message(Type.HAVECHUNK);
+
+        result.setVersion(2, 0);
+        result.setFileID(fileID);
+        result.setChunkNo(chunkNo);
+
+        return result;
+    }
+    
+    public Integer getPort() {
+        return port;
+    }
+
+    private void setPort(Integer value) {
+        port = value;
+    }
+    
+    public static Message makeListeningFor(FileID fileID, int chunkNo, int port) {
+        Message result = new Message(Type.LISTENINGFOR);
+
+        result.setVersion(2, 0);
+        result.setFileID(fileID);
+        result.setChunkNo(chunkNo);
+        result.setPort(port);
+
         return result;
     }
     
@@ -229,6 +263,12 @@ public class Message {
             msg.chunkNo = Integer.parseInt(chunkNoStr);
         }
 
+        if (msg.type == Type.LISTENINGFOR) {
+            paramNum++;
+            String portStr = msgParams[paramNum];
+            msg.port = Integer.parseInt(portStr);
+        }
+        
         if (msg.type == Type.PUTCHUNK) {
             paramNum++;
             String replicationDegStr = msgParams[paramNum];
@@ -262,4 +302,6 @@ public class Message {
 
         System.out.println(Arrays.toString(msg1.toByteArray()));
     }
+
+
 }

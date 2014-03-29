@@ -35,8 +35,10 @@ import javax.swing.text.DefaultCaret;
 
 import net.miginfocom.swing.MigLayout;
 import pt.up.fe.sdis.proj1.BackupSystem;
+import pt.up.fe.sdis.proj1.Chunk;
 import pt.up.fe.sdis.proj1.FileVersion;
 import pt.up.fe.sdis.proj1.gui.utils.GuiUtils;
+import pt.up.fe.sdis.proj1.protocols.initiator.ChunkBackup.ChunkBackupException;
 import pt.up.fe.sdis.proj1.protocols.initiator.FileBackup;
 import pt.up.fe.sdis.proj1.protocols.initiator.FileRestore;
 import pt.up.fe.sdis.proj1.utils.LogFormatter;
@@ -121,7 +123,7 @@ public class MainFrame extends JFrame {
                 fbd.setVisible(true);
 
                 if (fbd.succeed()) {
-                    File file = new File(fbd.getBackupFilePath()).getAbsoluteFile();
+                    final File file = new File(fbd.getBackupFilePath()).getAbsoluteFile();
                     Integer replicationDegree = fbd.getBackupReplicationDegree();
                     FileBackup b = _backupSystem.backupFile(file, replicationDegree);
 
@@ -144,7 +146,18 @@ public class MainFrame extends JFrame {
 
                         @Override
                         public void onError(Throwable e) {
-                            e.printStackTrace();
+                            if (e instanceof ChunkBackupException) {
+                                ChunkBackupException cbe = (ChunkBackupException)e;
+                                JOptionPane.showMessageDialog(MainFrame.this,
+                                        "Error sending chunk " + cbe.getChunkNo() + " from file '" + file.getAbsolutePath() + "'.\nCould not backup file '" + file.getAbsolutePath() + "'.",
+                                        "Error!",
+                                        JOptionPane.ERROR_MESSAGE);
+                            } else {
+                                JOptionPane.showMessageDialog(MainFrame.this,
+                                    e.getMessage() + "\nCould not backup file '" + file.getAbsolutePath() + "'.",
+                                    "Error!",
+                                    JOptionPane.ERROR_MESSAGE);
+                            }
                         }
 
                         @Override
@@ -189,7 +202,7 @@ public class MainFrame extends JFrame {
                 FileVersion fileVersion = list.getSelectedValue();
                 if (fileVersion == null) return;
                 
-                File oldFile = new File(fileVersion.getFilePath());
+                final File oldFile = new File(fileVersion.getFilePath());
                 String fileName = oldFile.getName();
                 
                 JFileChooser fc = new JFileChooser();
@@ -218,6 +231,10 @@ public class MainFrame extends JFrame {
                         @Override
                         public void onError(Throwable e) {
                             e.printStackTrace();
+                            JOptionPane.showMessageDialog(MainFrame.this,
+                                    e.getMessage() + "\n" + "Could not restore file '" + oldFile.getAbsolutePath() + "'.\nTry again later.",
+                                    "Error!",
+                                    JOptionPane.ERROR_MESSAGE);
                         }
 
                         @Override

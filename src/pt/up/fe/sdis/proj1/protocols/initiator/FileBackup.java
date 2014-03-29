@@ -6,6 +6,7 @@ import java.nio.file.FileAlreadyExistsException;
 import pt.up.fe.sdis.proj1.BackupSystem;
 import pt.up.fe.sdis.proj1.Chunk;
 import pt.up.fe.sdis.proj1.FileVersion;
+import pt.up.fe.sdis.proj1.messages.Message;
 import pt.up.fe.sdis.proj1.utils.MyFile;
 import rx.Observable;
 import rx.Observer;
@@ -24,24 +25,6 @@ public class FileBackup implements Observer<Object> {
         
         if (_bs.Files.containsOwnFile(file.getPath(), file.getLastModifiedDate()))
             throw new FileAlreadyExistsException(new FileVersion(file.getPath(), file.getLastModifiedDate()).toString());
-        
-        
-        ps.subscribe(new Observer<Double>() {
-
-            @Override
-            public void onCompleted() {
-                bs.Files.addOwnFile(file);
-            }
-
-            @Override
-            public void onError(Throwable e) {
-            }
-
-            @Override
-            public void onNext(Double t) {
-            } 
-            
-        });
     }
     
     public void Send() {
@@ -57,7 +40,7 @@ public class FileBackup implements Observer<Object> {
                 new ChunkBackup(_bs, chunk).getObservable().subscribe(this);
             }
         } catch (IOException e) {
-            new FileDeletion(_bs, _file.getPath(), _file.getLastModifiedDate());
+            _bs.Comm.MC.Sender.Send(Message.makeDelete(_file.getFileId()));
             ps.onError(e);
         }
     }
@@ -68,6 +51,7 @@ public class FileBackup implements Observer<Object> {
         ps.onNext(_numChunksSent / (double)_numChunks);
         if (_numChunks == _numChunksSent) {
             ps.onCompleted();
+            _bs.Files.addOwnFile(_file);
             _file.close();
         }
         else if (_numChunksToBeSent > 0) {
@@ -84,15 +68,15 @@ public class FileBackup implements Observer<Object> {
                 System.out.println("Sending chunk " + i);
                 new ChunkBackup(_bs, chunk).getObservable().subscribe(this);
             } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                _bs.Comm.MC.Sender.Send(Message.makeDelete(_file.getFileId()));
+                ps.onError(e);
             }
         }
     }
 
     @Override
     public void onError(Throwable e) {
-        new FileDeletion(_bs, _file.getPath(), _file.getLastModifiedDate());
+        _bs.Comm.MC.Sender.Send(Message.makeDelete(_file.getFileId()));
         ps.onError(e);
     }
 

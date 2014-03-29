@@ -53,17 +53,21 @@ public class FileRestore implements Observer<Object> {
 	private void restoreFile() throws IOException{
 		File dir = new File(_bs.getRestoresDir() + File.separator + _fileId.toString());
 		if (!dir.exists()){
-			throw new NoSuchFileException("0"); //first chunk is missing
+			throw new NoSuchFileException("No chunk 0 found on directory '" + dir.getAbsolutePath() + "'."); //first chunk is missing
 		}
 
 		//get all chunk files from directory in lexicographical order
 		File[] fileListing = getSortedChunks(dir);
+		
+		System.out.println(dir);
+		System.out.println(Arrays.toString(fileListing));
+		
 		//ensure all chunks are available and valid, if not, throw exception
 		validateChunks(fileListing);
 		//create destination file and append all chunks to it
 		writeChunksToFile(fileListing);
 		
-		FileSystemUtils.deleteFile(dir);
+		// FileSystemUtils.deleteFile(dir);
 	}
 
 	private File[] getSortedChunks(File dir) {
@@ -84,7 +88,7 @@ public class FileRestore implements Observer<Object> {
 		return fileListing;
 	}
 
-	private void writeChunksToFile(File[] fileListing) throws IOException {
+	private void writeChunksToFile(File[] fileListing) throws IOException {    
 		File file = new File(_destPath);
 		if(!file.exists()){
 			file.createNewFile();
@@ -110,7 +114,7 @@ public class FileRestore implements Observer<Object> {
 
 	private void validateChunks(File[] fileListing) throws NoSuchFileException {
 		if(fileListing.length < 1){
-			throw new NoSuchFileException("0");
+			throw new NoSuchFileException("Invalid number of Chunks.");
 		}
 		for(int i=0; i < fileListing.length; i++){
 			if(Integer.parseInt(fileListing[i].getName()) != i){

@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.file.FileAlreadyExistsException;
 import java.util.List;
 import java.util.PriorityQueue;
@@ -252,6 +253,23 @@ public class BackupSystem {
     private long _usedSpace;
     private long _totalSpace = 64000000L;
     private int _defaultReplicationDegree = 1;
+    private int _restorePort = 11094;
 
     public static final Logger Log = Logger.getLogger(BackupSystem.class.getName());
+
+    public int getRestorePort() {
+        return _restorePort;
+    }
+
+    private void setRestorePort(int restorePort) {
+        _restorePort = restorePort;
+    }
+
+    public InetAddress getAddress() {
+        try {
+            return InetAddress.getByName(_addr);
+        } catch (UnknownHostException e) {
+            return null;
+        }
+    }
 }

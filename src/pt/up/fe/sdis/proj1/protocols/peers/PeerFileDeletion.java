@@ -16,9 +16,7 @@ public class PeerFileDeletion extends AbstractProtocol {
 
 	@Override
 	protected void ProcessMessage(Message msg) {
-	    System.out.println("DelHere");
 	    _bs.Files.addDeletedFile(msg.getFileID());
-	    System.out.println("DelHere1");
 		if(_bs.Files.containsFile(msg.getFileID())){
 			_bs.deletePhysicalFile(msg.getFileID());
 		}

@@ -15,9 +15,7 @@ public class PeerIsDeletedProtocol extends AbstractProtocol {
 
     @Override
     protected void ProcessMessage(Message msg) {
-        System.out.println("Here");
         if (_bs.Files.containsDeletedFile(msg.getFileID())) {
-            System.out.println("Here1");
             _bs.Comm.MC.Sender.Send(Message.makeDelete(msg.getFileID()));
         }
 
