@@ -170,10 +170,12 @@ public class Message {
         return result;
     }
 
-    public static Message makeGetChunk(FileID fileID, int chunkNo) {
+    public static Message makeGetChunk(FileID fileID, int chunkNo, int majorVersion) {
         Message result = new Message(Type.GETCHUNK);
 
-        result.setVersion(1, 0);
+        if (majorVersion != 1 && majorVersion != 2) majorVersion = 1;
+        
+        result.setVersion(majorVersion, 0);
         result.setFileID(fileID);
         result.setChunkNo(chunkNo);
 
@@ -188,7 +190,7 @@ public class Message {
 
     public static Message makeIsDeleted(FileID fileID) {
         Message result = new Message(Type.ISDELETED);
-        result.setVersion(2, 0);
+        result.setVersion(1, 0);
         result.setFileID(fileID);
         return result;
     }

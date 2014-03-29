@@ -254,6 +254,7 @@ public class BackupSystem {
     private long _totalSpace = 64000000L;
     private int _defaultReplicationDegree = 1;
     private int _restorePort = 11094;
+    private int _protocolVersion = 1;
 
     public static final Logger Log = Logger.getLogger(BackupSystem.class.getName());
 
@@ -261,7 +262,7 @@ public class BackupSystem {
         return _restorePort;
     }
 
-    private void setRestorePort(int restorePort) {
+    public void setRestorePort(int restorePort) {
         _restorePort = restorePort;
     }
 
@@ -271,5 +272,13 @@ public class BackupSystem {
         } catch (UnknownHostException e) {
             return null;
         }
+    }
+
+    public void setProtocolVersion(int protocolVersion) {
+        _protocolVersion = protocolVersion;
+    }
+
+    public int getProtocolVersion() {
+        return _protocolVersion;
     }
 }

@@ -37,8 +37,11 @@ public class NetworkUtils {
     }
     
     public static boolean isValidPort(int port) {
-        return port >= 0 && port <= 65535;
+        return MINIMUM_PORT >= 0 && MAXIMUM_PORT <= 65535;
     }
+    
+    public static final int MINIMUM_PORT = 0;
+    public static final int MAXIMUM_PORT = 65535;
 
     public static InetAddress[] getPossibleInterfaces() {
         try {

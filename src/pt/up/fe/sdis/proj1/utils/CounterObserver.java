@@ -1,14 +1,16 @@
 package pt.up.fe.sdis.proj1.utils;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import pt.up.fe.sdis.proj1.messages.Message;
 import rx.Observer;
 
 public class CounterObserver implements Observer<Message> {
-	private Integer numReceived = 0;
+	private AtomicInteger numReceived = new AtomicInteger(0);
 	
-	public boolean received() { return numReceived > 0; }
+	public boolean received() { return numReceived.get() > 0; }
 	
-	public int getNumReceived() { return numReceived; }
+	public int getNumReceived() { return numReceived.get(); }
 	
 	@Override
 	public void onCompleted() { }
@@ -18,8 +20,6 @@ public class CounterObserver implements Observer<Message> {
 
 	@Override
 	public void onNext(Message arg0) {
-		synchronized (numReceived) {
-			numReceived++;
-		}
+		numReceived.incrementAndGet();
 	}
 }

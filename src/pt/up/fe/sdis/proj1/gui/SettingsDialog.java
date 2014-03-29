@@ -5,6 +5,7 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.text.DecimalFormat;
 
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
@@ -20,6 +21,7 @@ import javax.swing.border.EmptyBorder;
 import net.miginfocom.swing.MigLayout;
 import pt.up.fe.sdis.proj1.BackupSystem;
 import pt.up.fe.sdis.proj1.gui.utils.GuiUtils;
+import pt.up.fe.sdis.proj1.utils.NetworkUtils;
 
 public class SettingsDialog extends JDialog {
 
@@ -38,11 +40,11 @@ public class SettingsDialog extends JDialog {
         Unit unit = Unit.getAppropiateUnit(space);
         
         setResizable(false);
-        setBounds(100, 100, 450, 143);
+        setBounds(100, 100, 476, 238);
         getContentPane().setLayout(new BorderLayout());
         contentPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
         getContentPane().add(contentPanel, BorderLayout.CENTER);
-        contentPanel.setLayout(new MigLayout("", "[132px][][][5px][50px,grow][][][5px][79px][]", "[20px][26px][]"));
+        contentPanel.setLayout(new MigLayout("", "[132px][grow][][5px][50px,grow][][][5px][79px][]", "[20px][26px][][]"));
         {
             JLabel lblDafaultReplicationDegree = new JLabel("Dafault Replication Degree:");
             contentPanel.add(lblDafaultReplicationDegree, "cell 0 0,alignx left,aligny center");
@@ -72,6 +74,27 @@ public class SettingsDialog extends JDialog {
             contentPanel.add(multComboBox, "cell 2 1,growx");
         }
         {
+            JLabel lblProtocolVersion = new JLabel("Protocol Version:");
+            contentPanel.add(lblProtocolVersion, "cell 0 2,alignx left");
+        }
+        {
+            protocolVersion_cmb = new JComboBox<Integer>();
+            protocolVersion_cmb.setModel(new DefaultComboBoxModel<Integer>(new Integer[] {1, 2}));
+            protocolVersion_cmb.setSelectedItem(_backupSystem.getProtocolVersion());
+            contentPanel.add(protocolVersion_cmb, "cell 1 2,growx");
+        }
+        {
+            JLabel lblRestorePort = new JLabel("Restore Port:");
+            contentPanel.add(lblRestorePort, "cell 0 3");
+        }
+        {
+            restorePort_spn = new JSpinner();
+            restorePort_spn.setModel(new SpinnerNumberModel(_backupSystem.getRestorePort(), NetworkUtils.MINIMUM_PORT, NetworkUtils.MAXIMUM_PORT, 1));
+            restorePort_spn.setEditor(new JSpinner.NumberEditor(restorePort_spn, "#"));
+            
+            contentPanel.add(restorePort_spn, "cell 1 3,growx");
+        }
+        {
             JPanel buttonPane = new JPanel();
             buttonPane.setLayout(new FlowLayout(FlowLayout.RIGHT));
             getContentPane().add(buttonPane, BorderLayout.SOUTH);
@@ -83,9 +106,13 @@ public class SettingsDialog extends JDialog {
                             long multiplier = Unit.getMultiplier((Unit) multComboBox.getSelectedItem());
                             long avSpace = (Long)spaceSpinner.getValue();
                             int defaultRd = (Integer)rdspinner.getValue();
+                            int protocolVersion = (Integer)protocolVersion_cmb.getSelectedItem();
+                            int restorePort = (Integer)restorePort_spn.getValue();
                             
                             _backupSystem.setDefaultReplicationDegree(defaultRd);
                             _backupSystem.setTotalSpace(multiplier * avSpace);
+                            _backupSystem.setProtocolVersion(protocolVersion);
+                            _backupSystem.setRestorePort(restorePort);
                             
                             dispose();
                         } catch (Exception ex) {
@@ -120,4 +147,6 @@ public class SettingsDialog extends JDialog {
     private JSpinner spaceSpinner;
     private JSpinner rdspinner;
     private JComboBox<Unit> multComboBox;
+    private JSpinner restorePort_spn;
+    private JComboBox<Integer> protocolVersion_cmb;
 }

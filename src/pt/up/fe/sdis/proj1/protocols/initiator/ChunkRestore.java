@@ -26,7 +26,7 @@ public class ChunkRestore extends AbstractProtocol {
         
         _bs = bs;
 
-        final Message msg = Message.makeGetChunk(fileID, chunkNo);
+        final Message msg = Message.makeGetChunk(fileID, chunkNo, bs.getProtocolVersion());
         bs.Comm.MC.Sender.Send(msg);
         start(new MessageFilter(Message.Type.CHUNK, fileID, chunkNo));
         bs.Comm.MC.Publisher.getObservable().filter(new MessageFilter(Message.Type.HAVECHUNK, fileID, chunkNo)).subscribe(this);

@@ -32,14 +32,15 @@ public class PeerChunkBackup extends AbstractProtocol {
 
         if(_bs.getAvailableSpace() >= msg.getBody().length){
             final CounterObserver replyCounter = new CounterObserver();
-            final Subscription sub = _bs.Comm.MDR.Publisher.getObservable()
+            final Subscription sub = _bs.Comm.MC.Publisher.getObservable()
                     .filter(new MessageFilter(Message.Type.STORED, msg.getFileID(), msg.getChunkNo())).subscribe(replyCounter);
             
             Schedulers.io().schedule(new Action1<Scheduler.Inner>() {
                 @Override
                 public void call(Scheduler.Inner arg0) {
                     int i = replyCounter.getNumReceived();
-                    if (i < msg.getReplicationDeg()) {
+                    int maxRD = (int)Math.ceil(msg.getReplicationDeg() * 1.5);
+                    if (i < maxRD) {
                         _comm.MC.Sender.Send(Message.makeStored(msg.getFileID(), msg.getChunkNo()));
                     } else {
                         _bs.deleteChunk(msg.getFileID(), msg.getChunkNo());
