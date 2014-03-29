@@ -3,13 +3,13 @@ package pt.up.fe.sdis.proj1.fileInfo;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.PriorityQueue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -45,6 +45,13 @@ public class Files {
             + "    CONSTRAINT ownFile_PK PRIMARY KEY (id),                                                            "
             + "    CONSTRAINT ownFileId_Unique UNIQUE(fileId),                                                        "
             + "    CONSTRAINT ownFilePath_Unitque UNIQUE(filePath),                                                   "
+            + "    CONSTRAINT ownFileId_Size64 CHECK(length(fileId) = 64)                                             "
+            + ");                                                                                                     "
+            + "                                                                                                       "
+            + "CREATE TABLE RemovedFile (                                                                             "
+            + "    fileId TEXT NOT NULL,                                                                              "
+            + "                                                                                                       "
+            + "    CONSTRAINT removedFiles_PK PRIMARY KEY (fileId),                                                   "
             + "    CONSTRAINT ownFileId_Size64 CHECK(length(fileId) = 64)                                             "
             + ");                                                                                                     "
             + "                                                                                                       "
@@ -155,6 +162,20 @@ public class Files {
         } finally {
             if (fileSt != null)
                 fileSt.dispose();
+        }
+        
+        SQLiteStatement removedFileSt = null;
+        try {
+            removedFileSt = db.prepare("SELECT fileId FROM RemovedFile");
+            while (removedFileSt.step()) {
+                String fileId = removedFileSt.columnString(0);
+                _removedFiles.add(new FileID(fileId));
+            }
+        } catch (SQLiteException e) {
+            e.printStackTrace();
+        } finally {
+            if (removedFileSt != null)
+                removedFileSt.dispose();
         }
 
         SQLiteStatement ownfileSt = null;
@@ -383,17 +404,22 @@ public class Files {
         }
     }
 
-    public void addDeletedFile(FileID file) {
-        synchronized (_deletedFiles) {
-            _deletedFiles.put(file.toString(), new Date());
-            System.out.println("No Deleted Files: " + _deletedFiles.size());
+    public void addRemovedFile(FileID file) {
+        if (!containsRemovedFile(file)) {
+            _removedFiles.add(file);
+            queue.execute(new RemovedFileAdder(file));
         }
     }
     
-    public boolean containsDeletedFile(FileID file) {
-        synchronized (_deletedFiles) {
-            return _deletedFiles.containsKey(file.toString());
+    public void removeRemovedFile(FileID file) {
+        if (containsRemovedFile(file)) {
+            _removedFiles.remove(file);
+            queue.execute(new RemovedFileRemover(file));
         }
+    }
+    
+    public boolean containsRemovedFile(FileID file) {
+        return _removedFiles.contains(file);
     }
     
     @Override
@@ -463,6 +489,10 @@ public class Files {
         return result;
     }
 
+    public List<FileID> getRemovedFiles() {
+        return new ArrayList<FileID>(_removedFiles);
+    }
+    
     private SQLiteQueue queue;
 
     private BackupFileListener fileListener;
@@ -477,8 +507,5 @@ public class Files {
      */
     private ConcurrentHashMap<String, ConcurrentHashMap<Integer, Pair<Integer, HashSet<String>>>> _internalMap = new ConcurrentHashMap<String, ConcurrentHashMap<Integer, Pair<Integer, HashSet<String>>>>();
     
-    /*
-     * FileID -> DeletionDate
-     */
-    private ConcurrentHashMap<String, Date> _deletedFiles = new ConcurrentHashMap<String, Date>();
+    private Set<FileID> _removedFiles = java.util.Collections.newSetFromMap(new ConcurrentHashMap<FileID, Boolean>());
 }

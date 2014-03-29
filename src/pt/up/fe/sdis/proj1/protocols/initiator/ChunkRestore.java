@@ -4,8 +4,10 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.SocketTimeoutException;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import pt.up.fe.sdis.proj1.BackupSystem;
 import pt.up.fe.sdis.proj1.messages.Message;
@@ -39,6 +41,9 @@ public class ChunkRestore extends AbstractProtocol {
             public void call(Inner t1) {
                 NumTimes++;
                 
+                if (_waiting.get())
+                    try { _waiting.wait(); } catch (InterruptedException e) { }
+                
                 if (!isFinished()) {
                     if (NumTimes >= 3) {
                         finish();
@@ -53,6 +58,8 @@ public class ChunkRestore extends AbstractProtocol {
         }, 2, TimeUnit.SECONDS);
     }
 
+    private AtomicBoolean _waiting = new AtomicBoolean(false);
+    
     @Override
     public void ProcessMessage(Message msg) {
         System.out.println(msg.type + " Received");
@@ -76,16 +83,18 @@ public class ChunkRestore extends AbstractProtocol {
                 return;
             
             boolean success = true;
-            
+            _waiting.set(true);
             DatagramSocket ds = null;
             try {
                 ds = new DatagramSocket(_bs.getRestorePort());
+                ds.setSoTimeout(1000);
                 byte[] buffer = new byte[65536];
                 DatagramPacket dp = new DatagramPacket(buffer, buffer.length);
                 _bs.Comm.MC.Sender.Send(listeningMsg);
                 ds.receive(dp);
                 Message chunkMsg = Message.fromByteArray(Arrays.copyOf(dp.getData(), dp.getLength()));
                 _bs.writeChunk(chunkMsg);
+            } catch (SocketTimeoutException e) {
                 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -99,6 +108,7 @@ public class ChunkRestore extends AbstractProtocol {
                 finish();
             }
             
+            _waiting.notifyAll();
             break;
         default:
             break;

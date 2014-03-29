@@ -125,6 +125,17 @@ public class BackupSystem {
             
         });
         
+        Schedulers.newThread().schedule(new Action1<Scheduler.Inner>() {
+
+            @Override
+            public void call(Inner t1) {
+                List<FileID> files = Files.getRemovedFiles();
+                for (FileID f : files) 
+                    Comm.MC.Sender.Send(Message.makeDelete(f));
+            }
+            
+        });
+        
     }
 
     private void shutdownPeerProtocols() {

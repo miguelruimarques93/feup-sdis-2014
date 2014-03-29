@@ -27,6 +27,11 @@ public class PeerChunkBackup extends AbstractProtocol {
 
     @Override
     protected void ProcessMessage(final Message msg) {
+        if (_bs.Files.containsRemovedFile(msg.getFileID())) {
+            _comm.MC.Sender.Send(Message.makeDelete(msg.getFileID()));
+            return;
+        }
+        
         if(_bs.getAvailableSpace() < msg.getBody().length)
             new SpaceReclaiming(_bs, true);
 

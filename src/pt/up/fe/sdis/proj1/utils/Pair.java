@@ -1,6 +1,10 @@
 package pt.up.fe.sdis.proj1.utils;
 
-public class Pair<T, V> {
+import java.io.Serializable;
+
+public class Pair<T, V> implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     public Pair(T f, V s) { first = f; second = s; }
     public static <T1, V1> Pair<T1, V1> make_pair(T1 f, V1 s) { return new Pair<T1, V1>(f, s); }
     public T first;

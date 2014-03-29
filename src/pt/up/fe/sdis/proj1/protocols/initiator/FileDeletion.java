@@ -15,6 +15,7 @@ public class FileDeletion extends AbstractProtocol {
         
         Message msg = Message.makeDelete(fileInfo.first);
         bs.Comm.MC.Sender.Send(msg);
+        bs.Files.addRemovedFile(fileInfo.first);
         bs.Files.removeOwnFile(filePath, modificationMillis);
     }
 
