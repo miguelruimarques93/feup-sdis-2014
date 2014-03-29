@@ -72,7 +72,6 @@ public class MulticastChannelMesssagePublisher extends Thread {
         @Override
         public void call(Pair<byte[], InetAddress> arg0) {
             try {
-                BackupSystem.Log.log(Level.INFO, "Processing Message");
                 Message result = Message.fromByteArray(arg0.first);
                 result.Sender = arg0.second;
                 BackupSystem.Log.log(Level.INFO, "Receiveing " + result.type + " from " + result.Sender + ":" + (result.getFileID() != null ? " " + result.getFileID() : "") + (result.getChunkNo() != null ? " " + result.getChunkNo() : ""));

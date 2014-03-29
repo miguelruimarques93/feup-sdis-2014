@@ -23,6 +23,7 @@ import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JProgressBar;
@@ -116,20 +117,26 @@ public class MainFrame extends JFrame {
         JMenuItem mntmBackup = new JMenuItem("Backup");
         mntmBackup.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent arg0) {
-                JFileChooser fc = new JFileChooser();
-                int returnVal = fc.showOpenDialog(MainFrame.this);
-                if (returnVal == JFileChooser.APPROVE_OPTION) {
-                    File file = fc.getSelectedFile();
-                    FileBackup b = _backupSystem.backupFile(file);
-                    
+                FileBackupDialog fbd = new FileBackupDialog(MainFrame.this, _backupSystem);
+                fbd.setVisible(true);
+
+                if (fbd.succeed()) {
+                    File file = new File(fbd.getBackupFilePath()).getAbsoluteFile();
+                    Integer replicationDegree = fbd.getBackupReplicationDegree();
+                    FileBackup b = _backupSystem.backupFile(file, replicationDegree);
+
                     if (b == null) {
+                        JOptionPane.showMessageDialog(MainFrame.this,
+                                "File already backed up.",
+                                "Error!",
+                                JOptionPane.ERROR_MESSAGE);
                         return;
                     }
-                    
+
                     final Date start = new Date();
-                    
+
                     b.getProgressionObservable().observeOn(Schedulers.newThread()).subscribe(new Observer<Double>() {
-                        
+
                         @Override
                         public void onCompleted() {
                             System.out.println("Completed in " + (new Date().getTime() - start.getTime()) + " ms");
@@ -144,12 +151,12 @@ public class MainFrame extends JFrame {
                         public void onNext(final Double t) {
                             EventQueue.invokeLater(new Runnable() {
                                 public void run() {
-                                    progressBar.setValue((int)(t * 100.0));
+                                    progressBar.setValue((int) (t * 100.0));
                                 }
                             });
                         }
                     });
-                    
+
                     b.Send();
                 }
             }
