@@ -65,7 +65,13 @@ public class ChunkRestore extends AbstractProtocol {
         case HAVECHUNK:
             InetAddress addr = _bs.getAddress();
             System.out.println(addr);
-            Message listeningMsg = Message.makeListeningFor(msg.getFileID(), msg.getChunkNo(), _bs.getRestorePort());
+            Message listeningMsg = null;
+            try {
+            listeningMsg = Message.makeListeningFor(msg.getFileID(), msg.getChunkNo(), _bs.getRestorePort(), msg.getUniqueID());
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw e;
+            }
             if (addr == null)
                 return;
             
@@ -77,9 +83,7 @@ public class ChunkRestore extends AbstractProtocol {
                 byte[] buffer = new byte[65536];
                 DatagramPacket dp = new DatagramPacket(buffer, buffer.length);
                 _bs.Comm.MC.Sender.Send(listeningMsg);
-                System.out.println("Waiting... on " + ds.getInetAddress());
                 ds.receive(dp);
-                System.out.println("Received...");
                 Message chunkMsg = Message.fromByteArray(Arrays.copyOf(dp.getData(), dp.getLength()));
                 _bs.writeChunk(chunkMsg);
                 

@@ -32,7 +32,9 @@ public class PeerChunkRestore extends AbstractProtocol {
 	protected void ProcessMessage(final Message msg) {
 		if (_bs.Files.containsChunk(msg.getFileID(), msg.getChunkNo())) {
 		    if (msg.getVersion()[0] == 2) {
-		        Message haveChunkMsg = Message.makeHaveChunk(msg.getFileID(), msg.getChunkNo());
+		        final Integer uniqueID = _bs.getAddress().toString().hashCode();
+		        Message haveChunkMsg = Message.makeHaveChunk(msg.getFileID(), uniqueID, msg.getChunkNo());
+		        
 		        _bs.Comm.MC.Sender.Send(haveChunkMsg);
 		        _bs.Comm.MC.Publisher.getObservable().filter(new MessageFilter(Message.Type.LISTENINGFOR, msg.getFileID(), msg.getChunkNo())).subscribe(new Subscriber<Message>() {
 
@@ -47,6 +49,9 @@ public class PeerChunkRestore extends AbstractProtocol {
                     @Override
                     public void onNext(Message t) {
                         unsubscribe();
+                        
+                        if (!t.getUniqueID().equals(uniqueID))
+                            return;
                         
                         byte[] chunkArray = null;
                         try {

@@ -87,6 +87,8 @@ public class Message {
 
     public InetAddress Sender = null;
 
+    private Integer _uniqueId = null;
+
     public byte[] toByteArray() {
         StringBuilder sb = new StringBuilder();
 
@@ -108,6 +110,10 @@ public class Message {
         if (chunkNo != null)
             sb.append(' ' + chunkNo.toString());
 
+        if (_uniqueId != null) {
+            sb.append(' ' + _uniqueId.toString());
+        }
+        
         if (port != null)
             sb.append(' ' + port.toString());
         
@@ -195,16 +201,21 @@ public class Message {
         return result;
     }
     
-    public static Message makeHaveChunk(FileID fileID, int chunkNo) {
+    public static Message makeHaveChunk(FileID fileID, int uniqueID, int chunkNo) {
         Message result = new Message(Type.HAVECHUNK);
 
         result.setVersion(2, 0);
         result.setFileID(fileID);
         result.setChunkNo(chunkNo);
+        result.setUniqueID(uniqueID);
 
         return result;
     }
     
+    private void setUniqueID(int uniqueID) {
+        _uniqueId = uniqueID;
+    }
+
     public Integer getPort() {
         return port;
     }
@@ -213,12 +224,13 @@ public class Message {
         port = value;
     }
     
-    public static Message makeListeningFor(FileID fileID, int chunkNo, int port) {
+    public static Message makeListeningFor(FileID fileID, int chunkNo, int port, int uniqueID) {
         Message result = new Message(Type.LISTENINGFOR);
 
         result.setVersion(2, 0);
         result.setFileID(fileID);
         result.setChunkNo(chunkNo);
+        result.setUniqueID(uniqueID);
         result.setPort(port);
 
         return result;
@@ -265,6 +277,13 @@ public class Message {
             msg.chunkNo = Integer.parseInt(chunkNoStr);
         }
 
+        if (msg.type == Type.LISTENINGFOR || msg.type == Type.HAVECHUNK) {
+            paramNum++;
+            String uniqueIdStr = msgParams[paramNum];
+            System.out.println(uniqueIdStr);
+            msg._uniqueId = Integer.parseInt(uniqueIdStr);
+        }
+        
         if (msg.type == Type.LISTENINGFOR) {
             paramNum++;
             String portStr = msgParams[paramNum];
@@ -303,6 +322,10 @@ public class Message {
         Message msg1 = Message.fromByteArray(b);
 
         System.out.println(Arrays.toString(msg1.toByteArray()));
+    }
+
+    public Integer getUniqueID() {
+        return _uniqueId;
     }
 
 
