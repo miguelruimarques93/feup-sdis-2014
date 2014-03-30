@@ -66,20 +66,15 @@ public class PeerChunkRestore extends AbstractProtocol {
                         if (chunkArray == null)
                             return;
                         
-                        System.out.println("Here");
                         Chunk chunk = new Chunk(t.getChunkNo(), t.getFileID(), chunkArray);
                         Message chunkMessage = Message.makeChunk(chunk);
                         byte[] msgArray = chunkMessage.toByteArray();
                         DatagramSocket ds = null;
                         try {
                             ds = new DatagramSocket();
-                            System.out.println(t.getPort());
                             DatagramPacket dp = new DatagramPacket(msgArray, msgArray.length, t.Sender, t.getPort());
-                            System.out.println("Sending to... " + dp.getAddress());
                             ds.send(dp);
                         } catch (IOException e) {
-                            System.out.println("Heree");
-                            e.printStackTrace();
                         } finally {
                             if (ds != null)
                                 ds.close();

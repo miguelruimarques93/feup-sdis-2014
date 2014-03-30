@@ -27,6 +27,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
+import java.awt.Cursor;
 
 public class FileBackupDialog extends JDialog {
     private static final long serialVersionUID = 1L;
@@ -62,6 +63,7 @@ public class FileBackupDialog extends JDialog {
         }
         {
             JLabel lblbrowse = new JLabel("<html><u>Browse...</u></html>");
+            lblbrowse.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             lblbrowse.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent arg0) {

@@ -8,9 +8,13 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.FileAlreadyExistsException;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.FileHandler;
+import java.util.logging.Handler;
 import java.util.logging.Logger;
 
 import pt.up.fe.sdis.proj1.config.BackupSystemConfiguration;
@@ -38,6 +42,7 @@ import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 
 import com.sun.istack.internal.NotNull;
+import com.vogella.logger.MyHtmlFormatter;
 
 public class BackupSystem {
     public BackupSystem(BackupSystemConfiguration configs, InetAddress intf) throws IOException {
@@ -53,6 +58,12 @@ public class BackupSystem {
         _usedSpace = FileSystemUtils.fileSize(getBackupsDir());
         _addr = myAddr;
         initializePeerProtocols();
+        
+        Calendar c = Calendar.getInstance();
+        _fh = new FileHandler(getWorkingDir() + File.separator + c.get(Calendar.YEAR) + c.get(Calendar.MONTH) + c.get(Calendar.DAY_OF_MONTH)
+                + c.get(Calendar.HOUR) + c.get(Calendar.MINUTE) + c.get(Calendar.SECOND) + "backupSystem.log.html", false);
+        _fh.setFormatter(new MyHtmlFormatter());
+        Log.addHandler(_fh);
 
     }
 
@@ -75,6 +86,7 @@ public class BackupSystem {
     public void shutdown() {
         shutdownPeerProtocols();
         Files.dispose();
+        _fh.close();
     }
 
     public final Communicator Comm;
@@ -255,8 +267,6 @@ public class BackupSystem {
     private String _addr;
     private long _usedSpace;
 
-    public static final Logger Log = Logger.getLogger(BackupSystem.class.getName());
-
     public int getRestorePort() {
         return _systemConfigs.getRestorePort();
     }
@@ -282,4 +292,19 @@ public class BackupSystem {
     }
     
     private BackupSystemConfiguration _systemConfigs;
+    
+    private static final Logger intializeLogger() {       
+        Logger l =  Logger.getLogger(BackupSystem.class.getName());
+        
+        for(Logger p = l; p != null; p = p.getParent()) {
+            Handler[] hs = p.getHandlers();
+            for (Handler h : hs) {
+                p.removeHandler(h);
+            }
+        }
+        
+        return l;
+    }
+    public static final Logger Log = intializeLogger();
+    private FileHandler _fh;
 }

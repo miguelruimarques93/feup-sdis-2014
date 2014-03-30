@@ -32,7 +32,7 @@ public class FileVersion {
         return _dateFormat.format(new Date(_modificationMillis)) + " - " + _filePath;
     }
     
-    private static SimpleDateFormat _dateFormat =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS");
+    private static SimpleDateFormat _dateFormat =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     
     private String _filePath;
     private Long _modificationMillis;

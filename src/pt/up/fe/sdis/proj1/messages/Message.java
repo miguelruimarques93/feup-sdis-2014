@@ -280,7 +280,6 @@ public class Message {
         if (msg.type == Type.LISTENINGFOR || msg.type == Type.HAVECHUNK) {
             paramNum++;
             String uniqueIdStr = msgParams[paramNum];
-            System.out.println(uniqueIdStr);
             msg._uniqueId = Integer.parseInt(uniqueIdStr);
         }
         
@@ -303,25 +302,6 @@ public class Message {
         }
 
         return msg;
-    }
-
-    public static void main(String[] args) throws IOException {
-        Message msg = new Message(Type.PUTCHUNK);
-        msg.setVersion(1, 0);
-        msg.setBody(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 });
-        msg.setChunkNo(4526);
-        msg.setReplicationDeg(3);
-        msg.setFileID(new byte[] { 0x4a, 0x2f, 0x3e, 0x4a, 0x4e, 0x43, 0x34,
-                0x33, 0x33, 0x34, 0x4e, 0x1c, 0x04, 0x1c, 0x04, 0x1c, 0x55,
-                0x4e, 0x38, 0x2d, 0x00, 0x6f, 0x1c, 0x04, 0x1c, 0x3c, 0x55,
-                0x56, 0x50, 0x53, 0x70, 0x1a });
-        byte[] b = msg.toByteArray();
-
-        System.out.println(Arrays.toString(b));
-
-        Message msg1 = Message.fromByteArray(b);
-
-        System.out.println(Arrays.toString(msg1.toByteArray()));
     }
 
     public Integer getUniqueID() {

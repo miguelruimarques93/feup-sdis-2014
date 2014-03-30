@@ -62,7 +62,6 @@ public class ChunkRestore extends AbstractProtocol {
     
     @Override
     public void ProcessMessage(Message msg) {
-        System.out.println(msg.type + " Received");
         switch(msg.type){
         case CHUNK:
             _bs.writeChunk(msg);
@@ -71,7 +70,6 @@ public class ChunkRestore extends AbstractProtocol {
             break;
         case HAVECHUNK:
             InetAddress addr = _bs.getAddress();
-            System.out.println(addr);
             Message listeningMsg = null;
             try {
             listeningMsg = Message.makeListeningFor(msg.getFileID(), msg.getChunkNo(), _bs.getRestorePort(), msg.getUniqueID());

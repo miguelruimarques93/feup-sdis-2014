@@ -2,17 +2,18 @@ package pt.up.fe.sdis.proj1.protocols.initiator;
 
 import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import pt.up.fe.sdis.proj1.BackupSystem;
 import pt.up.fe.sdis.proj1.Chunk;
 import pt.up.fe.sdis.proj1.FileVersion;
 import pt.up.fe.sdis.proj1.messages.Message;
+import pt.up.fe.sdis.proj1.protocols.FileProtocol;
 import pt.up.fe.sdis.proj1.utils.MyFile;
 import rx.Observable;
-import rx.Observer;
 import rx.subjects.PublishSubject;
 
-public class FileBackup implements Observer<Object> {
+public class FileBackup extends FileProtocol {
     public FileBackup(final BackupSystem bs, final MyFile file, int replicationDegree) throws FileAlreadyExistsException {
         if (replicationDegree < 1 || replicationDegree > 9)
             throw new IllegalArgumentException("Replication Degree must be between 1 and 9.");
@@ -21,7 +22,7 @@ public class FileBackup implements Observer<Object> {
         _replicationDegree = replicationDegree;
         _file = file;
         
-        System.out.println(new FileVersion(file.getPath(), file.getLastModifiedDate()).toString());
+        _fileVersion = new FileVersion(file.getPath(), file.getLastModifiedDate());
         
         if (_bs.Files.containsOwnFile(file.getPath(), file.getLastModifiedDate()))
             throw new FileAlreadyExistsException(new FileVersion(file.getPath(), file.getLastModifiedDate()).toString());
@@ -34,7 +35,6 @@ public class FileBackup implements Observer<Object> {
             _numChunksToBeSent = _numChunks - numChunksInitiallySent;
             _file.open();
             for (int i = 0; i < numChunksInitiallySent; ++i) {
-                System.out.println("Sending chunk " + i);
                 byte[] chunkArray = _file.getChunk(i);
                 Chunk chunk = new Chunk(i, _replicationDegree, _file.getFileId(), chunkArray);
                 new ChunkBackup(_bs, chunk).getObservable().subscribe(this);
@@ -48,6 +48,12 @@ public class FileBackup implements Observer<Object> {
     @Override
     public void onCompleted() {
         _numChunksSent++;
+        
+        if (_finished.get()) {
+            new FileDeletion(_bs, _file.getPath(), _file.getLastModifiedDate());
+            return;
+        }
+        
         ps.onNext(_numChunksSent / (double)_numChunks);
         if (_numChunks == _numChunksSent) {
             ps.onCompleted();
@@ -65,7 +71,6 @@ public class FileBackup implements Observer<Object> {
                 byte[] chunkArray;
                 chunkArray = _file.getChunk(i);
                 Chunk chunk = new Chunk(i, _replicationDegree, _file.getFileId(), chunkArray);
-                System.out.println("Sending chunk " + i);
                 new ChunkBackup(_bs, chunk).getObservable().subscribe(this);
             } catch (IOException e) {
                 _bs.Comm.MC.Sender.Send(Message.makeDelete(_file.getFileId()));
@@ -76,8 +81,8 @@ public class FileBackup implements Observer<Object> {
 
     @Override
     public void onError(Throwable e) {
-        _bs.Comm.MC.Sender.Send(Message.makeDelete(_file.getFileId()));
         ps.onError(e);
+        _finished.set(true);
     }
 
     @Override
@@ -85,12 +90,17 @@ public class FileBackup implements Observer<Object> {
     
     public Observable<Double> getProgressionObservable() { return ps.asObservable(); }
     
+    public FileVersion getFileVersion() {
+        return _fileVersion;
+    }
+
     private int _numChunks;
     private Integer _numChunksToBeSent;
     private int _numChunksSent = 0;
     private BackupSystem _bs;
     private MyFile _file;
     private int _replicationDegree;
-    
+    private AtomicBoolean _finished = new AtomicBoolean(false);
     PublishSubject<Double> ps = PublishSubject.create();
+    private FileVersion _fileVersion;
 }

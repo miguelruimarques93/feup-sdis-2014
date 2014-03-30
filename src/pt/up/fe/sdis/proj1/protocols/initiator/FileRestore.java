@@ -10,17 +10,18 @@ import java.io.IOException;
 import java.nio.file.NoSuchFileException;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import pt.up.fe.sdis.proj1.BackupSystem;
 import pt.up.fe.sdis.proj1.Chunk;
+import pt.up.fe.sdis.proj1.protocols.FileProtocol;
 import pt.up.fe.sdis.proj1.utils.FileID;
 import pt.up.fe.sdis.proj1.utils.FileSystemUtils;
 import pt.up.fe.sdis.proj1.utils.Pair;
 import rx.Observable;
-import rx.Observer;
 import rx.subjects.PublishSubject;
 
-public class FileRestore implements Observer<Object> {
+public class FileRestore extends FileProtocol {
 
 	public FileRestore(BackupSystem bs, String filePath, String destPath, Long modificationMillis) throws FileNotFoundException{
 	    _bs = bs;
@@ -57,11 +58,7 @@ public class FileRestore implements Observer<Object> {
 		}
 
 		//get all chunk files from directory in lexicographical order
-		File[] fileListing = getSortedChunks(dir);
-		
-		System.out.println(dir);
-		System.out.println(Arrays.toString(fileListing));
-		
+		File[] fileListing = getSortedChunks(dir);		
 		//ensure all chunks are available and valid, if not, throw exception
 		validateChunks(fileListing);
 		//create destination file and append all chunks to it
@@ -132,6 +129,11 @@ public class FileRestore implements Observer<Object> {
     public void onCompleted() {
 	    _numChunksReceived++;
 	    
+	    if (_cancelled.get()) {
+	        File dir = new File(_bs.getRestoresDir() + File.separator + _fileId.toString());
+	        FileSystemUtils.deleteFile(dir);
+	    }
+	    
 	    ps.onNext(_numChunksReceived / (double)_numChunks);
 	    
 	    if (_numChunks == _numChunksReceived)
@@ -149,6 +151,7 @@ public class FileRestore implements Observer<Object> {
     @Override
     public void onError(Throwable e) {
         ps.onError(e);
+        _cancelled.set(true);
     }
 
     @Override
@@ -162,6 +165,7 @@ public class FileRestore implements Observer<Object> {
     private int _numChunks;
     private int _numChunksReceived = 0;
     private Integer _numChunksToBeReceived;
+    private AtomicBoolean _cancelled = new AtomicBoolean(false);
     
     private PublishSubject<Double> ps = PublishSubject.create();
 }

@@ -17,8 +17,6 @@ public class SpaceReclaiming extends AbstractProtocol {
         
        PriorityQueue<ChunkInfo> chunksToRemove = _bs.Files.getChunksToRemove();
        
-       System.out.println(chunksToRemove.size());
-       
        if(clearExcess){
            while(!chunksToRemove.isEmpty() && (chunksToRemove.peek().getExcessDegree() > 0 || _bs.getAvailableSpace() < 0)){
                ChunkInfo ci = chunksToRemove.remove();
