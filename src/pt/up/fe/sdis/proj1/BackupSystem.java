@@ -61,11 +61,11 @@ public class BackupSystem {
     private static final String DatabaseFileName = "database.db";
     
     public String getBackupsDir() { 
-        return _workingDir + File.separator + BackupsFolder;
+        return getWorkingDir() + File.separator + BackupsFolder;
     }
     
     public String getRestoresDir() { 
-        return _workingDir + File.separator + RestoresFolder;
+        return getWorkingDir() + File.separator + RestoresFolder;
     }
     
     private String getDatabaseFilePath() {
@@ -239,7 +239,7 @@ public class BackupSystem {
     }
     
     public String getWorkingDir() {
-        return _workingDir;
+        return _systemConfigs.getWorkingDir();
     }
 
     public void commitSettings() {
@@ -253,7 +253,6 @@ public class BackupSystem {
     private PeerStored _stored;
     private PeerIsDeletedProtocol _isDeletedProtocol;
     private String _addr;
-    private String _workingDir;
     private long _usedSpace;
 
     public static final Logger Log = Logger.getLogger(BackupSystem.class.getName());
