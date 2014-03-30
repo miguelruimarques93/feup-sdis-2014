@@ -28,7 +28,6 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
-import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
@@ -37,7 +36,6 @@ import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
 import javax.swing.text.DefaultCaret;
 
-import net.miginfocom.swing.MigLayout;
 import pt.up.fe.sdis.proj1.BackupSystem;
 import pt.up.fe.sdis.proj1.FileVersion;
 import pt.up.fe.sdis.proj1.config.BackupSystemConfiguration;
@@ -49,7 +47,7 @@ import pt.up.fe.sdis.proj1.protocols.initiator.FileRestore;
 import pt.up.fe.sdis.proj1.utils.LogFormatter;
 import rx.Observer;
 import rx.schedulers.Schedulers;
-import java.awt.FlowLayout;
+import javax.swing.ScrollPaneConstants;
 
 public class MainFrame extends JFrame {
 
@@ -91,7 +89,7 @@ public class MainFrame extends JFrame {
                         if (e instanceof UserRequestException) {
                             tc.setState("Cancelled by user request.");
                         } else {
-                            tc.setState("Failed.");
+                            tc.setState("Failed. " + e.getMessage());
                             JOptionPane.showMessageDialog(MainFrame.this, "Could not restore file '" + oldFile.getAbsolutePath() + "'.\nTry again later.",
                                     "Error!", JOptionPane.ERROR_MESSAGE);
                         }
@@ -227,9 +225,10 @@ public class MainFrame extends JFrame {
 
     public void initializeGUI() {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setBounds(100, 100, 615, 310);
+        setBounds(100, 100, 800, 600);
         setMinimumSize(new Dimension(615, 310));
-        // setExtendedState(getExtendedState() | MAXIMIZED_BOTH);
+        this.setLocationRelativeTo(null);
+        
         contentPane = new JPanel();
         contentPane.setBorder(new EmptyBorder(0, 0, 0, 0));
         setContentPane(contentPane);
@@ -285,7 +284,7 @@ public class MainFrame extends JFrame {
         BoxLayout taskLayout = new BoxLayout(_taskControllerPanel, BoxLayout.Y_AXIS);
         _taskControllerPanel.setLayout(taskLayout);
 
-        JScrollPane scroll_1 = new JScrollPane(_taskControllerPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        JScrollPane scroll_1 = new JScrollPane(_taskControllerPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         panel_2.add(scroll_1);
 
         JPanel panel_1 = new JPanel();
@@ -365,6 +364,7 @@ public class MainFrame extends JFrame {
 
                 @Override
                 public void FileVersionAdded(FileVersion filePath) {
+                    System.out.println(filePath);
                     listModel.addElement(filePath);
                     list.setModel(listModel);
                 }

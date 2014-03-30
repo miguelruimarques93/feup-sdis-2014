@@ -27,7 +27,7 @@ public class TaskController extends JPanel {
      */
     public TaskController(String taskName, String initialState) {
         setBorder(UIManager.getBorder("TextPane.border"));
-        MigLayout layout = new MigLayout("", "[68px,growprio 10,grow][42px,growprio 50,grow][146px,grow][39px]", "[23px][]");
+        MigLayout layout = new MigLayout("", "[68px,grow][42px,grow][146px,grow][39px]", "[23px][]");
         setLayout(layout);
         
         _lblTaskName = new JLabel(taskName);

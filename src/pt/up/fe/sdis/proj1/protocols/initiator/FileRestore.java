@@ -54,7 +54,7 @@ public class FileRestore extends FileProtocol {
 	private void restoreFile() throws IOException{
 		File dir = new File(_bs.getRestoresDir() + File.separator + _fileId.toString());
 		if (!dir.exists()){
-			throw new NoSuchFileException("No chunk 0 found on directory '" + dir.getAbsolutePath() + "'."); //first chunk is missing
+			throw new NoSuchFileException("Couldn't find directory '" + dir.getAbsolutePath() + "'."); //first chunk is missing
 		}
 
 		//get all chunk files from directory in lexicographical order

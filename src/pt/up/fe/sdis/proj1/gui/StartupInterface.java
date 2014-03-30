@@ -33,7 +33,7 @@ import pt.up.fe.sdis.proj1.gui.utils.TextFieldWithPlaceholder;
 import pt.up.fe.sdis.proj1.utils.NetworkUtils;
 import pt.up.fe.sdis.proj1.utils.Pair;
 
-public class ConfigWindow {
+public class StartupInterface {
 
     private JFrame frame;
     private JTextField txt_mc_ip;
@@ -48,7 +48,7 @@ public class ConfigWindow {
         EventQueue.invokeLater(new Runnable() {
             public void run() {
                 try {
-                    ConfigWindow window = new ConfigWindow();
+                    StartupInterface window = new StartupInterface();
                     window.frame.setVisible(true);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -60,7 +60,7 @@ public class ConfigWindow {
     /**
      * Create the application.
      */
-    public ConfigWindow() {
+    public StartupInterface() {
         initializeConfigs();
         initializeGUI();
     }

@@ -9,7 +9,6 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.FileAlreadyExistsException;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.concurrent.TimeUnit;
@@ -59,11 +58,19 @@ public class BackupSystem {
         _addr = myAddr;
         initializePeerProtocols();
         
-        Calendar c = Calendar.getInstance();
-        _fh = new FileHandler(getWorkingDir() + File.separator + c.get(Calendar.YEAR) + c.get(Calendar.MONTH) + c.get(Calendar.DAY_OF_MONTH)
-                + c.get(Calendar.HOUR) + c.get(Calendar.MINUTE) + c.get(Calendar.SECOND) + "backupSystem.log.html", false);
-        _fh.setFormatter(new MyHtmlFormatter());
-        Log.addHandler(_fh);
+        String workDirStr = _systemConfigs.getWorkingDir();
+        File workDir = new File(workDirStr).getAbsoluteFile();
+        if (!workDir.exists())
+            workDir.mkdirs();
+        
+        try {
+            Calendar c = Calendar.getInstance();
+            _fh = new FileHandler(getWorkingDir() + File.separator + c.get(Calendar.YEAR) + c.get(Calendar.MONTH) + c.get(Calendar.DAY_OF_MONTH)
+                    + c.get(Calendar.HOUR) + c.get(Calendar.MINUTE) + c.get(Calendar.SECOND) + "backupSystem.log.html", false);
+            _fh.setFormatter(new MyHtmlFormatter());
+            Log.addHandler(_fh);
+        } catch (Exception e) {
+        }
 
     }
 
@@ -86,7 +93,7 @@ public class BackupSystem {
     public void shutdown() {
         shutdownPeerProtocols();
         Files.dispose();
-        _fh.close();
+        if (_fh != null) _fh.close();
     }
 
     public final Communicator Comm;
@@ -306,5 +313,5 @@ public class BackupSystem {
         return l;
     }
     public static final Logger Log = intializeLogger();
-    private FileHandler _fh;
+    private FileHandler _fh = null;
 }
