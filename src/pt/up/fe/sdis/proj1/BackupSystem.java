@@ -313,4 +313,13 @@ public class BackupSystem {
     }
     public static final Logger Log = intializeLogger();
     private FileHandler _fh = null;
+
+    public int getBackupSlidingWindow() {
+        return _systemConfigs.getBackupSlidingWindow();
+    }
+
+    public void setBackupSlidingWindow(int slidingWindow) {
+        _systemConfigs.setBackupSlidingWindow(slidingWindow);
+        
+    }
 }

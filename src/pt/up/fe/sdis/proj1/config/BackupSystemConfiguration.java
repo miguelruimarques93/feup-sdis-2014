@@ -16,6 +16,7 @@ public class BackupSystemConfiguration implements Serializable {
     private BackupSystemConfiguration(String configFilePath) {
         _configFile = configFilePath;
         _modified = true;
+        System.out.println(_backupSlidingWindow);
     }
     
     public void save() {
@@ -132,14 +133,24 @@ public class BackupSystemConfiguration implements Serializable {
         _modified = true;
     }
 
+    public Integer getBackupSlidingWindow() {
+        return _backupSlidingWindow;
+    }
+
+    public void setBackupSlidingWindow(Integer _backupSlidingWindow) {
+        this._backupSlidingWindow = _backupSlidingWindow;
+        _modified = true;
+    }
+
     private Pair<String, Integer> _mc;
     private Pair<String, Integer> _mdb;
     private Pair<String, Integer> _mdr;
     private String _workingDir = new File("workDir").getAbsolutePath();
     private Integer _defaultReplicationDeegree = 1;
-    private Long _availableSpace = 0L;
+    private Long _availableSpace = 64000000L;
     private Integer _protocolVersion = 1;
     private Integer _restorePort = 11094;
+    private Integer _backupSlidingWindow = 1;
     
     private transient boolean _modified = false;
     private transient String _configFile;

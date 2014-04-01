@@ -31,7 +31,7 @@ public class FileBackup extends FileProtocol {
     public void Send() {
         try {
             _numChunks = _file.getNumberOfChunks();
-            int numChunksInitiallySent = Math.min(1, _numChunks);
+            int numChunksInitiallySent = Math.min(_bs.getBackupSlidingWindow(), _numChunks);
             _numChunksToBeSent = _numChunks - numChunksInitiallySent;
             _file.open();
             for (int i = 0; i < numChunksInitiallySent; ++i) {

@@ -43,7 +43,7 @@ public class SettingsDialog extends JDialog {
         getContentPane().setLayout(new BorderLayout());
         contentPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
         getContentPane().add(contentPanel, BorderLayout.CENTER);
-        contentPanel.setLayout(new MigLayout("", "[132px][grow][][5px][50px,grow][][][5px][79px][]", "[20px][26px][][]"));
+        contentPanel.setLayout(new MigLayout("", "[132px][grow][][5px][50px,grow][][][5px][79px][]", "[20px][][26px][][]"));
         {
             JLabel lblDafaultReplicationDegree = new JLabel("Dafault Replication Degree:");
             contentPanel.add(lblDafaultReplicationDegree, "cell 0 0,alignx left,aligny center");
@@ -56,42 +56,53 @@ public class SettingsDialog extends JDialog {
             contentPanel.add(rdspinner, "cell 1 0,alignx left,aligny top");
         }
         {
+            JLabel lblBackupSlidingWindow = new JLabel("Backup Sliding Window:");
+            contentPanel.add(lblBackupSlidingWindow, "cell 0 1");
+        }
+        {
+            backupSlidingWindowSpinner = new JSpinner();
+            contentPanel.add(backupSlidingWindowSpinner, "cell 1 1,growx");
+            backupSlidingWindowSpinner.setMinimumSize(new Dimension(100, 20));
+            backupSlidingWindowSpinner.setPreferredSize(new Dimension(50, 20));
+            backupSlidingWindowSpinner.setModel(new SpinnerNumberModel(_backupSystem.getBackupSlidingWindow(), 1, 15, 1));
+        }
+        {
             JLabel lblAvailableSpace = new JLabel("Available Space:");
-            contentPanel.add(lblAvailableSpace, "cell 0 1,alignx left,aligny center");
+            contentPanel.add(lblAvailableSpace, "cell 0 2,alignx left,aligny center");
         }
         {
             spaceSpinner = new JSpinner();
             spaceSpinner.setMinimumSize(new Dimension(100, 20));
             spaceSpinner.setModel(new SpinnerNumberModel(new Long(space / Unit.getMultiplier(unit)), new Long(0), new Long(9000000), new Long(1)));
             spaceSpinner.setPreferredSize(new Dimension(50, 20));
-            contentPanel.add(spaceSpinner, "cell 1 1");
+            contentPanel.add(spaceSpinner, "cell 1 2");
         }
         {
             multComboBox = new JComboBox<Unit>();
             multComboBox.setModel(new DefaultComboBoxModel<Unit>(Unit.values()));
             multComboBox.setSelectedItem(unit);
-            contentPanel.add(multComboBox, "cell 2 1,growx");
+            contentPanel.add(multComboBox, "cell 2 2,growx");
         }
         {
             JLabel lblProtocolVersion = new JLabel("Protocol Version:");
-            contentPanel.add(lblProtocolVersion, "cell 0 2,alignx left");
+            contentPanel.add(lblProtocolVersion, "cell 0 3,alignx left");
         }
         {
             protocolVersion_cmb = new JComboBox<Integer>();
             protocolVersion_cmb.setModel(new DefaultComboBoxModel<Integer>(new Integer[] {1, 2}));
             protocolVersion_cmb.setSelectedItem(_backupSystem.getProtocolVersion());
-            contentPanel.add(protocolVersion_cmb, "cell 1 2,growx");
+            contentPanel.add(protocolVersion_cmb, "cell 1 3,growx");
         }
         {
             JLabel lblRestorePort = new JLabel("Restore Port:");
-            contentPanel.add(lblRestorePort, "cell 0 3");
+            contentPanel.add(lblRestorePort, "cell 0 4");
         }
         {
             restorePort_spn = new JSpinner();
             restorePort_spn.setModel(new SpinnerNumberModel(_backupSystem.getRestorePort(), NetworkUtils.MINIMUM_PORT, NetworkUtils.MAXIMUM_PORT, 1));
             restorePort_spn.setEditor(new JSpinner.NumberEditor(restorePort_spn, "#"));
             
-            contentPanel.add(restorePort_spn, "cell 1 3,growx");
+            contentPanel.add(restorePort_spn, "cell 1 4,growx");
         }
         {
             JPanel buttonPane = new JPanel();
@@ -107,11 +118,13 @@ public class SettingsDialog extends JDialog {
                             int defaultRd = (Integer)rdspinner.getValue();
                             int protocolVersion = (Integer)protocolVersion_cmb.getSelectedItem();
                             int restorePort = (Integer)restorePort_spn.getValue();
+                            int slidingWindow = (Integer)backupSlidingWindowSpinner.getValue();
                             
                             _backupSystem.setDefaultReplicationDegree(defaultRd);
                             _backupSystem.setTotalSpace(multiplier * avSpace);
                             _backupSystem.setProtocolVersion(protocolVersion);
                             _backupSystem.setRestorePort(restorePort);
+                            _backupSystem.setBackupSlidingWindow(slidingWindow);
                             
                             dispose();
                         } catch (Exception ex) {
@@ -148,4 +161,5 @@ public class SettingsDialog extends JDialog {
     private JComboBox<Unit> multComboBox;
     private JSpinner restorePort_spn;
     private JComboBox<Integer> protocolVersion_cmb;
+    private JSpinner backupSlidingWindowSpinner;
 }
