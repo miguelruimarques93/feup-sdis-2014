@@ -16,7 +16,6 @@ public class BackupSystemConfiguration implements Serializable {
     private BackupSystemConfiguration(String configFilePath) {
         _configFile = configFilePath;
         _modified = true;
-        System.out.println(_backupSlidingWindow);
     }
     
     public void save() {
