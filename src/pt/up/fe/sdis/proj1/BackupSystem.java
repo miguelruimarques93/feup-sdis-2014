@@ -40,7 +40,6 @@ import rx.Scheduler.Inner;
 import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 
-import com.sun.istack.internal.NotNull;
 import com.vogella.logger.MyHtmlFormatter;
 
 public class BackupSystem {
@@ -172,7 +171,7 @@ public class BackupSystem {
         _usedSpace += writtenSize;
     }
 
-    public void deleteChunk(FileID fileId, @NotNull Integer chunkNo) {
+    public void deleteChunk(FileID fileId, Integer chunkNo) {
         String filePath = getBackupsDir() + File.separator + fileId.toString() + File.separator + chunkNo.toString();
         File file = new File(filePath).getAbsoluteFile();
         long fileSize = FileSystemUtils.fileSize(file);
